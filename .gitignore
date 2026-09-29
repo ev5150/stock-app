@@ -1,0 +1,6 @@
+secrets.local.txt
+.claude/
+__pycache__/
+tools/bin/
+supabase/.temp/
+stock.html

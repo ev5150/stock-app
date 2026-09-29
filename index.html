@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>うちのストック帳</title>
+<meta name="theme-color" content="#2F6B4F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ストック帳">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Maru+Gothic:wght@700;900&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#F3F5F1; --surface:#FFFFFF; --sunk:#E8ECE6; --ink:#1D2822; --muted:#5E6B63; --line:#D5DCD4;
+  --accent:#2F6B4F; --accent-ink:#FFFFFF;
+  --ok:#2F6B4F; --ok-bg:#E3EFE7;
+  --warn:#9A5B00; --warn-bg:#FBEBCB;
+  --crit:#B3261E; --crit-bg:#FBE1DD;
+  --display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --bg:#121815; --surface:#1B231F; --sunk:#232D28; --ink:#E4ECE6; --muted:#9AA89F; --line:#2E3A34;
+    --accent:#6FC29A; --accent-ink:#0E1712;
+    --ok:#7BCBA2; --ok-bg:#1E3329; --warn:#F0B75A; --warn-bg:#3A2C12; --crit:#FF8A7E; --crit-bg:#41201C;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:16px 72px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-family:var(--display);font-weight:900;font-size:26px;margin:0;letter-spacing:.02em}
+.sub{color:var(--muted);font-size:13px;margin:2px 0 0}
+.iconbtn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;cursor:pointer;display:grid;place-items:center}
+.iconbtn .badge{position:absolute;margin:-26px -26px 0 0;width:10px;height:10px;border-radius:50%;background:var(--crit)}
+
+.banner{border-radius:12px;padding:12px 14px;background:var(--warn-bg);color:var(--ink);font-size:14px;display:flex;gap:10px;align-items:flex-start}
+.banner b{color:var(--warn)}
+
+.alert{border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;border:1.5px solid var(--crit);background:var(--crit-bg)}
+.alert.calm{border-color:var(--ok);background:var(--ok-bg)}
+.alert h2{margin:0;font-family:var(--display);font-size:18px;display:flex;align-items:center;gap:8px}
+.alert h2 .n{font-variant-numeric:tabular-nums;background:var(--crit);color:var(--surface);border-radius:999px;padding:0 10px;font-size:15px}
+.alert.calm h2{color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:14px;border-radius:999px;padding:3px 10px;background:var(--surface);border:1px solid var(--line);display:inline-flex;gap:6px;align-items:center}
+.chip b{font-weight:700}
+.chip.zero b{color:var(--crit)} .chip.one b{color:var(--warn)}
+
+.tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:12px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;padding:10px 8px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.hint{font-size:13px;color:var(--muted);margin:0}
+
+.stack{display:flex;flex-direction:column;gap:16px}
+.group{display:flex;flex-direction:column;gap:6px}
+.group h3{margin:0;font-size:12px;letter-spacing:.12em;color:var(--muted);font-weight:700;padding-left:2px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:grid;grid-template-columns:6px 1fr auto;align-items:center;gap:12px;padding:10px 12px 10px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.stripe{align-self:stretch}
+.row.zero .stripe{background:var(--crit)} .row.one .stripe{background:var(--warn)}
+.name{min-width:0;display:flex;flex-direction:column}
+.name button{all:unset;cursor:pointer;font-weight:700;overflow-wrap:anywhere}
+.pill{font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;width:max-content;margin-top:2px}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.one{background:var(--warn-bg);color:var(--warn)}
+.pill.zero{background:var(--crit-bg);color:var(--crit)}
+.step{display:flex;align-items:center;gap:2px}
+.step button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;font-family:var(--body);touch-action:manipulation}
+.step button:active{transform:scale(.95)}
+.qty{min-width:40px;text-align:center;font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums}
+.row.zero .qty{color:var(--crit)} .row.one .qty{color:var(--warn)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.shop section{display:flex;flex-direction:column;gap:6px}
+.shop h3{margin:0;font-family:var(--display);font-size:17px}
+.shop .no h3{color:var(--ok)}
+.nobuy{display:flex;flex-wrap:wrap;gap:6px}
+.nobuy span{font-size:14px;padding:4px 10px;border-radius:8px;background:var(--ok-bg);color:var(--ok);font-variant-numeric:tabular-nums}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel h2{margin:0;font-size:17px;font-family:var(--display)}
+.fields{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;align-items:end}
+@media (max-width:560px){.fields{grid-template-columns:1fr 1fr}.fields .wide{grid-column:1/-1}}
+label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);font-weight:500}
+input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px;width:100%;min-width:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn{font:inherit;font-weight:700;border-radius:10px;padding:10px 18px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{background:transparent;color:var(--crit);border-color:var(--crit)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.empty{padding:24px 16px;text-align:center;color:var(--muted)}
+.msg{font-size:14px;margin:0}
+.msg.err{color:var(--crit)}
+
+.center{min-height:80vh;display:flex;flex-direction:column;justify-content:center;gap:18px}
+.logo{width:72px;height:72px;border-radius:18px}
+
+.settings dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+.settings dt{color:var(--muted)}
+.settings dd{margin:0;font-weight:700}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}.step button:active{transform:none}}
+</style>
+</head>
+<body>
+
+<!-- 設定が済んでいない -->
+<div class="wrap" id="scr-setup" hidden>
+  <div class="center">
+    <h1>うちのストック帳</h1>
+    <p class="msg">config.js に Supabase の URL とキーがまだ入っていません。README の手順 5 を見てください。</p>
+  </div>
+</div>
+
+<!-- ログイン -->
+<div class="wrap" id="scr-login" hidden>
+  <div class="center">
+    <img class="logo" src="icons/icon-192.png" alt="">
+    <div>
+      <h1>うちのストック帳</h1>
+      <p class="sub">一度ログインすれば、次からはそのまま開けます。</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-auth="signin">ログイン</button>
+      <button type="button" role="tab" aria-selected="false" data-auth="signup">はじめて使う</button>
+    </div>
+    <form class="panel" id="authForm">
+      <p class="msg" id="authHint">登録したメールアドレスとパスワードを入れてください。</p>
+      <label>メールアドレス<input id="l-email" type="email" autocomplete="username" required placeholder="name@example.com"></label>
+      <label>パスワード<input id="l-pass" type="password" autocomplete="current-password" required minlength="6"></label>
+      <button class="btn primary block" id="authBtn">ログイン</button>
+    </form>
+    <form class="panel" id="newPassForm" hidden>
+      <p class="msg">新しいパスワードを決めてください（6文字以上）。</p>
+      <label>新しいパスワード<input id="l-newpass" type="password" autocomplete="new-password" required minlength="6"></label>
+      <button class="btn primary block" id="newPassBtn">パスワードを変更</button>
+    </form>
+    <p class="msg err" id="loginErr" role="alert"></p>
+    <button type="button" class="btn" id="forgotBtn">パスワードを忘れたとき</button>
+  </div>
+</div>
+
+<!-- 登録されていない人 -->
+<div class="wrap" id="scr-denied" hidden>
+  <div class="center">
+    <h1>このアドレスは登録されていません</h1>
+    <p class="msg"><span id="deniedEmail"></span> はこのアプリの利用者に入っていません。アプリを用意した人に、メールアドレスを登録してもらってください。</p>
+    <button class="btn" data-logout>別のアドレスでログイン</button>
+  </div>
+</div>
+
+<!-- 本体 -->
+<div class="wrap" id="scr-app" hidden>
+  <header>
+    <div>
+      <h1>うちのストック帳</h1>
+      <p class="sub">残り1つ以下になったら「買うもの」に出ます</p>
+    </div>
+    <button class="iconbtn" id="gearBtn" aria-label="設定">⚙<span class="badge" id="gearBadge" hidden></span></button>
+  </header>
+
+  <div class="banner" id="installBanner" hidden>
+    <div><b>通知を受け取るには</b><br>下の共有ボタン（□に↑）→「ホーム画面に追加」を押して、ホーム画面のアイコンから開いてください。</div>
+  </div>
+  <div class="banner" id="pushBanner" hidden>
+    <div><b>通知がオフです</b><br>在庫が減ったときに知らせてほしい場合は、右上の ⚙ から通知をオンにしてください。</div>
+  </div>
+
+  <section class="panel settings" id="settings" hidden>
+    <h2>設定</h2>
+    <dl>
+      <dt>ログイン中</dt><dd id="s-email"></dd>
+      <dt>通知</dt><dd id="s-push"></dd>
+    </dl>
+    <p class="msg err" id="pushErr" role="alert"></p>
+    <div class="actions">
+      <button class="btn" data-logout>ログアウト</button>
+      <button class="btn" id="pushOffBtn" hidden>通知をオフ</button>
+      <button class="btn primary" id="pushOnBtn">通知をオンにする</button>
+    </div>
+  </section>
+
+  <div id="alert" class="alert calm" role="status" aria-live="polite"><h2>読み込み中…</h2></div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="stock">在庫</button>
+    <button role="tab" aria-selected="false" data-tab="shop">お店で見る</button>
+  </div>
+
+  <div id="view"></div>
+
+  <form class="panel" id="itemForm" autocomplete="off">
+    <h2 id="formTitle">品目を追加</h2>
+    <div class="fields">
+      <label class="wide">品名<input id="f-name" required maxlength="40" placeholder="例：トイレットペーパー"></label>
+      <label>分類<select id="f-cat"></select></label>
+      <label>今ある数<input id="f-qty" type="number" min="0" max="999" value="2" inputmode="numeric"></label>
+      <label>知らせる数<input id="f-alert" type="number" min="0" max="99" value="1" inputmode="numeric"></label>
+    </div>
+    <p class="hint">「知らせる数」以下になると通知します。ふつうは 1 のままで大丈夫です。</p>
+    <div class="actions">
+      <button type="button" class="btn danger" id="delBtn" hidden>削除する</button>
+      <button type="button" class="btn" id="cancelBtn" hidden>やめる</button>
+      <button type="submit" class="btn primary" id="saveBtn">追加</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script src="config.js"></script>
+<script>
+const CFG = window.STOCK_CONFIG || {};
+const CATS = ["冷蔵","冷凍","調味料","乾物・缶詰","飲み物","日用品","洗剤・掃除","その他"];
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const pushSupported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+let sb = null, session = null;
+let items = [];
+let tab = new URLSearchParams(location.search).get("tab")==="shop" ? "shop" : "stock";
+let editing = null, confirmDel = false;
+let inflight = 0;
+
+function show(id){for(const s of ["setup","login","denied","app"])$("#scr-"+s).hidden = s!==id}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("show"),2400)}
+
+/* ================= 表示 ================= */
+const level = it => it.qty<=0 ? "zero" : it.qty<=it.alert_at ? "one" : "ok";
+const label = it => it.qty<=0 ? "欠品" : it.qty<=it.alert_at ? `残り${it.qty}` : "十分ある";
+const sorted = () => [...items].sort((a,b)=>(CATS.indexOf(a.cat)-CATS.indexOf(b.cat))||a.name.localeCompare(b.name,"ja"));
+const lowItems = () => sorted().filter(i=>level(i)!=="ok").sort((a,b)=>a.qty-b.qty);
+
+function renderAlert(){
+  const el=$("#alert"), low=lowItems();
+  if(!items.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してください。</p>`;return}
+  if(!low.length){el.className="alert calm";el.innerHTML=`<h2>今は買い足すものはありません</h2><p class="hint">全部、在庫が十分あります。</p>`;return}
+  el.className="alert";
+  el.innerHTML=`<h2>買うもの <span class="n">${low.length}</span></h2>
+    <div class="chips">${low.map(i=>`<span class="chip ${level(i)}">${esc(i.name)} <b>${i.qty<=0?"欠品":"残り"+i.qty}</b></span>`).join("")}</div>`;
+}
+
+function rowHTML(i){
+  const lv=level(i);
+  return `<div class="row ${lv}" data-id="${esc(i.id)}">
+    <span class="stripe"></span>
+    <div class="name"><button type="button" data-edit="${esc(i.id)}" aria-label="${esc(i.name)}を編集">${esc(i.name)}</button><span class="pill ${lv}">${label(i)}</span></div>
+    <div class="step">
+      <button type="button" data-d="-1" aria-label="${esc(i.name)}を1つ減らす">−</button>
+      <span class="qty">${i.qty}</span>
+      <button type="button" data-d="1" aria-label="${esc(i.name)}を1つ増やす">＋</button>
+    </div></div>`;
+}
+
+function renderView(){
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
+  const v=$("#view");
+  if(!items.length){v.innerHTML=`<div class="list"><div class="empty">まだ品目がありません</div></div>`;return}
+  if(tab==="stock"){
+    const groups=CATS.map(c=>[c,sorted().filter(i=>i.cat===c)]).filter(g=>g[1].length);
+    v.innerHTML=`<div class="stack">
+      <p class="hint">使ったら −、買ってきたら ＋。品名をタップすると編集できます。</p>
+      ${groups.map(([c,list])=>`<div class="group"><h3>${esc(c)}</h3><div class="list">${list.map(rowHTML).join("")}</div></div>`).join("")}</div>`;
+  }else{
+    const buy=lowItems(), ok=sorted().filter(i=>level(i)==="ok");
+    v.innerHTML=`<div class="stack shop">
+      <section><h3>買うもの</h3>
+        <div class="list">${buy.length?buy.map(rowHTML).join(""):`<div class="empty">買い足すものはありません</div>`}</div>
+        <p class="hint">買ったら ＋ を押すと、ここから消えます。</p></section>
+      <section class="no"><h3>家にまだあるので買わない</h3>
+        <div class="nobuy">${ok.map(i=>`<span>${esc(i.name)} ×${i.qty}</span>`).join("")||"<span>なし</span>"}</div></section>
+    </div>`;
+  }
+}
+function render(){renderAlert();renderView()}
+
+/* ================= データ ================= */
+async function load(){
+  if(inflight) return;           // 自分の変更が送信中なら、終わってから読み直す
+  const {data,error}=await sb.from("items").select("id,name,cat,qty,alert_at");
+  if(error){toast("読み込めませんでした。電波を確認してください");return}
+  items=data; render();
+}
+let reloadTimer;
+function scheduleLoad(){clearTimeout(reloadTimer);reloadTimer=setTimeout(load,300)}
+
+async function run(p, okMsg){
+  inflight++;
+  try{
+    const {data,error}=await p;
+    if(error) throw error;
+    if(okMsg) toast(okMsg);
+    return data;
+  }catch(e){
+    toast("保存できませんでした。電波を確認して、もう一度お試しください");
+    return undefined;
+  }finally{
+    inflight--; if(!inflight) scheduleLoad();
+  }
+}
+
+/* ================= 操作 ================= */
+document.addEventListener("click",async e=>{
+  const step=e.target.closest(".step button");
+  if(step){
+    const id=step.closest(".row").dataset.id, it=items.find(i=>i.id===id); if(!it) return;
+    const d=Number(step.dataset.d); if(d<0&&it.qty<=0) return;
+    const before=level(it);
+    it.qty=Math.max(0,Math.min(999,it.qty+d)); render();
+    const after=level(it);
+    if(after!=="ok"&&before==="ok") toast(`${it.name}：${label(it)}。買うものに入れました`);
+    else if(after==="ok"&&before!=="ok") toast(`${it.name}：補充しました`);
+    await run(sb.rpc("adjust_qty",{item_id:id,delta:d}));
+    return;
+  }
+  const ed=e.target.closest("[data-edit]"); if(ed){startEdit(ed.dataset.edit);return}
+  const tb=e.target.closest(".tabs button[data-tab]"); if(tb){tab=tb.dataset.tab;renderView();return}
+  if(e.target.closest("[data-logout]")){await sb.auth.signOut();location.replace("./");}
+});
+
+function startEdit(id){
+  const it=items.find(i=>i.id===id); if(!it) return;
+  editing=id; confirmDel=false;
+  $("#f-name").value=it.name; $("#f-cat").value=it.cat; $("#f-qty").value=it.qty; $("#f-alert").value=it.alert_at;
+  $("#formTitle").textContent="品目を編集"; $("#saveBtn").textContent="保存";
+  $("#delBtn").hidden=false; $("#delBtn").textContent="削除する"; $("#cancelBtn").hidden=false;
+  $("#itemForm").scrollIntoView({behavior:"smooth",block:"center"});
+}
+function resetForm(){
+  editing=null; confirmDel=false; $("#itemForm").reset(); $("#f-qty").value=2; $("#f-alert").value=1;
+  $("#formTitle").textContent="品目を追加"; $("#saveBtn").textContent="追加";
+  $("#delBtn").hidden=true; $("#cancelBtn").hidden=true;
+}
+$("#cancelBtn").onclick=resetForm;
+$("#delBtn").onclick=async()=>{
+  if(!confirmDel){confirmDel=true;$("#delBtn").textContent="本当に削除";return}
+  const id=editing, it=items.find(i=>i.id===id);
+  items=items.filter(i=>i.id!==id); render(); resetForm();
+  await run(sb.from("items").delete().eq("id",id), `${it?it.name:"品目"}を削除しました`);
+};
+$("#itemForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const name=$("#f-name").value.trim(); if(!name) return;
+  const row={name,cat:$("#f-cat").value,
+    qty:Math.max(0,Math.min(999,parseInt($("#f-qty").value)||0)),
+    alert_at:Math.max(0,Math.min(99,parseInt($("#f-alert").value)||0))};
+  if(editing){
+    const id=editing, it=items.find(i=>i.id===id); if(it) Object.assign(it,row);
+    render(); resetForm();
+    await run(sb.from("items").update(row).eq("id",id), "保存しました");
+  }else{
+    if(items.some(i=>i.name===name)){toast(`「${name}」はもう登録されています`);return}
+    resetForm();
+    const data=await run(sb.from("items").insert(row).select("id,name,cat,qty,alert_at").single(), `${name}を追加しました`);
+    if(data){items.push(data);render()}
+  }
+});
+
+/* ================= 通知 ================= */
+function b64ToU8(b64){const p="=".repeat((4-b64.length%4)%4);const s=atob((b64+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0))}
+
+async function currentSub(){
+  if(!pushSupported) return null;
+  const reg=await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+async function refreshPushUI(){
+  const err=$("#pushErr"); err.textContent="";
+  $("#installBanner").hidden = !(isIOS && !isStandalone);
+  let on=false;
+  if(!pushSupported){
+    $("#s-push").textContent = isIOS && !isStandalone ? "ホーム画面から開くと使えます" : "この端末では使えません";
+    $("#pushOnBtn").hidden=true; $("#pushOffBtn").hidden=true;
+  }else if(Notification.permission==="denied"){
+    $("#s-push").textContent="拒否されています";
+    err.textContent = isIOS ? "iPhoneの「設定」→「通知」→「ストック帳」で通知を許可してください。" : "ブラウザのサイト設定で通知を許可してください。";
+    $("#pushOnBtn").hidden=true; $("#pushOffBtn").hidden=true;
+  }else{
+    on = !!(await currentSub()) && Notification.permission==="granted";
+    $("#s-push").textContent = on ? "オン" : "オフ";
+    $("#pushOnBtn").hidden=on; $("#pushOffBtn").hidden=!on;
+  }
+  const canTurnOn = pushSupported && Notification.permission!=="denied" && !on;
+  $("#pushBanner").hidden = !canTurnOn;
+  $("#gearBadge").hidden = !canTurnOn;
+}
+
+$("#pushOnBtn").onclick=async()=>{
+  const btn=$("#pushOnBtn"); btn.disabled=true;
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted"){await refreshPushUI();return}
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      const res=await fetch(CFG.supabaseUrl+"/functions/v1/notify-low-stock");
+      if(!res.ok) throw new Error("vapid "+res.status);
+      const {publicKey}=await res.json();
+      sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(publicKey)});
+    }
+    const j=sub.toJSON();
+    const {error}=await sb.from("push_subscriptions").upsert({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth});
+    if(error) throw error;
+    toast("通知をオンにしました");
+  }catch(e){
+    $("#pushErr").textContent="通知をオンにできませんでした。電波を確認して、もう一度お試しください。";
+  }finally{btn.disabled=false; await refreshPushUI()}
+};
+$("#pushOffBtn").onclick=async()=>{
+  const sub=await currentSub();
+  if(sub){await sb.from("push_subscriptions").delete().eq("endpoint",sub.endpoint);await sub.unsubscribe()}
+  toast("通知をオフにしました"); await refreshPushUI();
+};
+$("#gearBtn").onclick=()=>{const s=$("#settings");s.hidden=!s.hidden;if(!s.hidden)refreshPushUI()};
+
+/* ================= ログイン ================= */
+let authMode="signin", recovering=false;
+function setAuthMode(m){
+  authMode=m; $("#loginErr").textContent="";
+  document.querySelectorAll("[data-auth]").forEach(b=>b.setAttribute("aria-selected",b.dataset.auth===m));
+  $("#authBtn").textContent = m==="signin" ? "ログイン" : "登録して始める";
+  $("#authHint").textContent = m==="signin" ? "登録したメールアドレスとパスワードを入れてください。" : "メールアドレスと、これから使うパスワード（6文字以上）を決めてください。";
+  $("#l-pass").autocomplete = m==="signin" ? "current-password" : "new-password";
+}
+document.querySelectorAll("[data-auth]").forEach(b=>b.onclick=()=>setAuthMode(b.dataset.auth));
+
+$("#authForm").addEventListener("submit",async e=>{
+  e.preventDefault(); $("#loginErr").textContent="";
+  const email=$("#l-email").value.trim(), password=$("#l-pass").value;
+  const btn=$("#authBtn"); btn.disabled=true;
+  let res;
+  if(authMode==="signin"){
+    res=await sb.auth.signInWithPassword({email,password});
+    if(res.error) $("#loginErr").textContent = "メールアドレスかパスワードが違います。はじめての場合は「はじめて使う」から登録してください。";
+  }else{
+    res=await sb.auth.signUp({email,password});
+    if(res.error){
+      const m=(res.error.message||"").toLowerCase();
+      $("#loginErr").textContent = m.includes("already") ? "このアドレスは登録済みです。「ログイン」から入ってください。"
+        : m.includes("password") ? "パスワードは6文字以上にしてください。"
+        : "登録できませんでした。電波を確認して、もう一度お試しください。";
+    }
+  }
+  btn.disabled=false;
+});
+
+$("#forgotBtn").onclick=async()=>{
+  const email=$("#l-email").value.trim();
+  if(!email){$("#loginErr").textContent="先にメールアドレスを入れてから押してください。";return}
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  $("#loginErr").textContent = error ? "メールを送れませんでした。少し時間をおいて、もう一度お試しください。"
+    : `${email} にパスワード再設定のメールを送りました。メールのリンクを開いて新しいパスワードを決めたら、このアプリに戻ってログインしてください。`;
+};
+
+$("#newPassForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const {error}=await sb.auth.updateUser({password:$("#l-newpass").value});
+  if(error){$("#loginErr").textContent="変更できませんでした。6文字以上で、もう一度お試しください。";return}
+  recovering=false; $("#newPassForm").hidden=true; toast("パスワードを変更しました");
+  enterApp();
+});
+
+/* ================= 起動 ================= */
+let started=false;
+async function enterApp(){
+  const {data:member}=await sb.rpc("is_member");
+  if(member!==true){$("#deniedEmail").textContent=session.user.email;show("denied");return}
+  show("app"); $("#s-email").textContent=session.user.email;
+  if(started) return; started=true;
+  render(); await load(); refreshPushUI();
+  sb.channel("items").on("postgres_changes",{event:"*",schema:"public",table:"items"},scheduleLoad).subscribe();
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
+}
+
+(async()=>{
+  $("#f-cat").innerHTML=CATS.map(c=>`<option>${c}</option>`).join("");
+  if(!CFG.supabaseUrl || CFG.supabaseUrl.includes("YOUR-PROJECT") || !window.supabase){show("setup");return}
+  if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+  sb=window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey);
+  sb.auth.onAuthStateChange((ev,s)=>{
+    session=s;
+    if(ev==="PASSWORD_RECOVERY") recovering=true;
+    // コールバック内で Supabase を直接呼ぶと固まることがあるため、次の処理に回す
+    setTimeout(()=>{
+      if(recovering){show("login");$("#authForm").hidden=true;$(".tabs").hidden=true;$("#forgotBtn").hidden=true;$("#newPassForm").hidden=false;return}
+      if(s) enterApp(); else {started=false; show("login")}
+    },0);
+  });
+})();
+</script>
+</body>
+</html>

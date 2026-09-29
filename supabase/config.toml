@@ -1,0 +1,16 @@
+# Supabase に反映する設定（書いてある項目だけが反映される）
+# 反映:  .\tools\bin\supabase.exe config push
+project_id = "stock-app"
+
+[auth]
+site_url = "https://ev5150.github.io/stock-app/"
+additional_redirect_urls = ["https://ev5150.github.io/stock-app/"]
+minimum_password_length = 6
+
+[auth.email]
+# メールアドレスとパスワードで登録したら、確認メールなしですぐ使える
+# （登録しても members に載っていない人はデータを見られない）
+enable_confirmations = false
+
+[functions.notify-low-stock]
+verify_jwt = false
