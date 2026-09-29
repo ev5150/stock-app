@@ -443,16 +443,18 @@ const atHome = r => { if(r.amount||r.count) return null; const it=matchItem(r.na
 
 // LINE から貼り付けたものを、在庫と比べて判定する
 //   skip    … 家に足りている → 追加しない
-//   partial … 家にあるが足りない → 足りない数だけ追加
+//   partial … 足りない → 足りない数だけ追加
 //   check   … グラムなどで比べられない → 追加して「量を確認」
-//   add     … 家にない → そのまま追加
+//   add     … 在庫に登録していない → 頼まれた数のまま追加
+// 数で数えるものは「頼まれた数を使っても、知らせる数だけは家に残る」ように買う数を決める
+//   買う数 = 頼まれた数 + 知らせる数 − 今ある数
 function judge(r){
   const it=matchItem(r.name);
   if(!it) return {mode:"add"};
   if(r.count){
-    if(it.qty>=r.count) return {mode:"skip",it};
-    if(it.qty>0) return {mode:"partial",it,short:r.count-it.qty};
-    return {mode:"add",it};
+    const short=r.count+it.alert_at-it.qty;
+    if(short<=0) return {mode:"skip",it};
+    return {mode:"partial",it,short};
   }
   if(!r.amount) return level(it)==="ok" ? {mode:"skip",it} : {mode:"add",it};
   return it.qty>0 ? {mode:"check",it} : {mode:"add",it};
@@ -618,8 +620,8 @@ let draft=[];
 function renderPreview(){
   const pv=$("#preview");
   const add=draft.filter(r=>judge(r).mode!=="skip").length, skip=draft.length-add;
-  const note = (r,j) => j.mode==="skip" ? `<span class="home-note">家に${j.it.qty}あり・追加しません</span>`
-    : j.mode==="partial" ? `<span class="part-note">家に${j.it.qty}あり → あと${j.short}${esc(unitOf(r))}を追加</span>`
+  const note = (r,j) => j.mode==="skip" ? `<span class="home-note">家に${j.it.qty}あり・追加しません${r.count?`（使っても${j.it.qty-r.count}残る）`:""}</span>`
+    : j.mode==="partial" ? `<span class="part-note">${j.it.qty>0?`家に${j.it.qty}あり`:"家にない"} → ${j.short}${esc(unitOf(r))}買う（使っても${j.it.alert_at}残る）</span>`
     : j.mode==="check" ? `<span class="part-note">家に${j.it.qty}あり・量を確認してね</span>` : "";
   pv.innerHTML = draft.length
     ? `<p class="hint">${add} 件を追加します${skip?`（家に足りている ${skip} 件は追加しません）`:""}。違うものは × で外せます。</p>`+draft.map((r,i)=>{const j=judge(r);return `<div class="pv ${j.mode==="skip"?"skip":""}"><b>${esc(r.name)}</b>${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}${note(r,j)}<button type="button" data-drop="${i}" aria-label="${esc(r.name)}を外す">×</button></div>`}).join("")
