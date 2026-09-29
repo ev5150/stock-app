@@ -60,8 +60,12 @@ h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spa
 .banner{border-radius:12px;padding:12px 14px;background:var(--warn-bg);color:var(--ink);font-size:14px;display:flex;gap:10px;align-items:flex-start}
 .banner b{color:var(--warn)}
 
-.alert{position:relative;border-radius:14px;padding:16px 84px 16px 16px;min-height:104px;display:flex;flex-direction:column;gap:10px;border:1.5px solid var(--crit);background:var(--crit-bg)}
-.alert > .mascot{position:absolute;right:10px;bottom:8px}
+.alert{border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;border:1.5px solid var(--crit);background:var(--crit-bg)}
+.friend{all:unset;cursor:pointer;border-radius:16px;flex:none}
+.friend:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.friend.hop .mascot{animation:hop .5s ease}
+@keyframes hop{0%,100%{transform:translateY(0)}35%{transform:translateY(-14px) rotate(-4deg)}65%{transform:translateY(0) rotate(3deg)}}
+@media (prefers-reduced-motion:reduce){.friend.hop .mascot{animation:none}}
 .alert.calm{border-color:var(--ok);background:var(--ok-bg)}
 .alert h2{margin:0;font-family:var(--display);font-size:18px;display:flex;align-items:center;gap:8px}
 .alert h2 .n{font-variant-numeric:tabular-nums;background:var(--crit);color:var(--surface);border-radius:999px;padding:0 10px;font-size:15px}
@@ -272,16 +276,20 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 <!-- 本体 -->
 <div class="wrap" id="scr-app" hidden>
   <header>
-    <div class="brand">
-      <svg class="mascot xs" viewBox="0 0 120 140" aria-hidden="true"><use href="#m-normal"/></svg>
-      <div>
-        <h1>DEBUとCHIKAのストック帳</h1>
-        <p class="sub">残り1つ以下になったら「買うもの」に出ます</p>
-      </div>
+    <div>
+      <h1>DEBUとCHIKAのストック帳</h1>
+      <p class="sub">残り1つ以下になったら「買うもの」に出ます</p>
     </div>
     <button class="iconbtn" id="gearBtn" aria-label="設定">⚙<span class="badge" id="gearBadge" hidden></span></button>
   </header>
   <div class="stripes" aria-hidden="true"></div>
+
+  <div class="hello">
+    <button type="button" class="friend" id="friendBtn" aria-label="キャラクターに話しかける">
+      <svg class="mascot lg" viewBox="0 0 120 140" aria-hidden="true"><use id="friendFace" href="#m-happy"/></svg>
+    </button>
+    <div class="bubble" id="friendSay" aria-live="polite">いっしょに<br>おうちの在庫を<br>見ていこうね</div>
+  </div>
 
   <div class="banner" id="installBanner" hidden>
     <div><b>通知を受け取るには</b><br>下の共有ボタン（□に↑）→「ホーム画面に追加」を押して、ホーム画面のアイコンから開いてください。</div>
@@ -383,13 +391,42 @@ const mascot = (mood, size) => `<svg class="mascot ${size}" viewBox="0 0 120 140
 
 function renderAlert(){
   const el=$("#alert"), low=lowItems(), reqs=toBuy();
-  if(!items.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してね。</p>${mascot("normal","sm")}`;return}
-  if(!low.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>今日は買わなくて大丈夫</h2><p class="hint">全部、家に十分あるよ。</p>${mascot("happy","sm")}`;return}
+  renderFriend(low.length+reqs.length);
+  if(!items.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してね。</p>`;return}
+  if(!low.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>今日は買わなくて大丈夫</h2><p class="hint">全部、家に十分あるよ。</p>`;return}
   el.className="alert";
   el.innerHTML=`<h2>買うもの <span class="n">${low.length+reqs.length}</span></h2>
-    <div class="chips">${reqs.map(r=>`<span class="chip asked">${esc(r.name)} <b>${esc(amtText(r)||"頼まれた")}</b></span>`).join("")}${low.map(i=>`<span class="chip ${level(i)}">${esc(i.name)} <b>${i.qty<=0?"欠品":"残り"+i.qty}</b></span>`).join("")}</div>
-    ${mascot("worried","sm")}`;
+    <div class="chips">${reqs.map(r=>`<span class="chip asked">${esc(r.name)} <b>${esc(amtText(r)||"頼まれた")}</b></span>`).join("")}${low.map(i=>`<span class="chip ${level(i)}">${esc(i.name)} <b>${i.qty<=0?"欠品":"残り"+i.qty}</b></span>`).join("")}</div>`;
 }
+
+/* ================= キャラクターのセリフ ================= */
+const CHATTER = [
+  ["happy","いつも<br>ありがとう"],
+  ["normal","使ったら<br>−を押してね"],
+  ["happy","買ってきたら<br>＋を押してね"],
+  ["normal","スーパーでは<br>「お店で見る」を<br>見てね"],
+  ["happy","LINEで頼まれたら<br>貼り付けてね"],
+  ["happy","いっしょに<br>おうちの在庫を<br>見ていこうね"],
+];
+let chatIdx=-1, chatTimer=null, buyCount=0;
+function renderFriend(n){
+  buyCount=n;
+  if(chatTimer) return;                 // タップで話している間はそのまま
+  const [mood,say] = !items.length&&!requests.length ? ["normal","いっしょに<br>おうちの在庫を<br>見ていこうね"]
+    : n>0 ? ["worried",`買うものが<br><b>${n}こ</b> あるよ<br>よろしくね`]
+    : ["happy","今日は<br>買わなくて<br>大丈夫だよ"];
+  $("#friendFace").setAttribute("href","#m-"+mood);
+  $("#friendSay").innerHTML=say;
+}
+$("#friendBtn").onclick=()=>{
+  chatIdx=(chatIdx+1)%CHATTER.length;
+  const [mood,say]=CHATTER[chatIdx];
+  $("#friendFace").setAttribute("href","#m-"+mood);
+  $("#friendSay").innerHTML=say;
+  const b=$("#friendBtn"); b.classList.remove("hop"); void b.offsetWidth; b.classList.add("hop");
+  clearTimeout(chatTimer);
+  chatTimer=setTimeout(()=>{chatTimer=null;renderFriend(buyCount)},6000);
+};
 
 function reqHTML(r){
   const home = r.done ? null : atHome(r);

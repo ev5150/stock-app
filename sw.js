@@ -1,6 +1,6 @@
 // アプリの画面をオフラインでも開けるようにし、在庫の通知を表示する。
 // 画面のファイルを変えたら VERSION を上げると、スマホ側も新しい版に入れ替わる。
-const VERSION = "v6";
+const VERSION = "v7";
 const CACHE = `stock-${VERSION}`;
 const SHELL = [
   "./",
