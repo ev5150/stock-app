@@ -1,6 +1,6 @@
 // アプリの画面をオフラインでも開けるようにし、在庫の通知を表示する。
 // 画面のファイルを変えたら VERSION を上げると、スマホ側も新しい版に入れ替わる。
-const VERSION = "v8";
+const VERSION = "v9";
 const CACHE = `stock-${VERSION}`;
 const SHELL = [
   "./",
@@ -12,7 +12,7 @@ const SHELL = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {
@@ -28,7 +28,7 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== self.location.origin) return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: "no-cache" })   // 公開サイトの10分キャッシュを使わず、毎回新しい版を確認する
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));

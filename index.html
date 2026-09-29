@@ -868,7 +868,15 @@ async function enterApp(){
 (async()=>{
   $("#f-cat").innerHTML=CATS.map(c=>`<option>${c}</option>`).join("");
   if(!CFG.supabaseUrl || CFG.supabaseUrl.includes("YOUR-PROJECT") || !window.supabase){show("setup");return}
-  if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+  if("serviceWorker" in navigator){
+    // 新しい版に入れ替わったら、1回だけ読み込み直して最新の画面にする
+    const hadController=!!navigator.serviceWorker.controller;
+    let reloaded=false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{
+      if(hadController && !reloaded){reloaded=true;location.reload()}
+    });
+    navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
+  }
   sb=window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey);
   sb.auth.onAuthStateChange((ev,s)=>{
     session=s;
