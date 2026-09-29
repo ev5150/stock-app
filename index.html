@@ -102,6 +102,8 @@ h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spa
 .req.done .what b,.req.done .amt{text-decoration:line-through;color:var(--muted)}
 .linkbtn{all:unset;cursor:pointer;font-size:13px;color:var(--muted);text-decoration:underline;align-self:flex-end}
 .chip.asked b{color:var(--accent)}
+.req.home .what b,.req.home .amt{text-decoration:line-through;text-decoration-color:var(--crit);text-decoration-thickness:2px;color:var(--muted)}
+.home-note{font-size:12px;font-weight:700;color:var(--crit)}
 
 /* LINE から追加 */
 .paste summary{cursor:pointer;font-family:var(--display);font-size:16px;list-style:none;display:flex;justify-content:space-between;align-items:center}
@@ -290,10 +292,13 @@ const sorted = () => [...items].sort((a,b)=>(CATS.indexOf(a.cat)-CATS.indexOf(b.
 const lowItems = () => sorted().filter(i=>level(i)!=="ok").sort((a,b)=>a.qty-b.qty);
 
 const pending = () => requests.filter(r=>!r.done);
+// 頼まれたけれど、家に十分ある（在庫が「十分ある」状態の）もの
+const atHome = r => { const it=matchItem(r.name); return it && level(it)==="ok" ? it : null; };
+const toBuy = () => pending().filter(r=>!atHome(r));
 const amtText = r => r.amount ? (/^\d+(\.\d+)?$/.test(r.amount) ? "×"+r.amount : r.amount) : "";
 
 function renderAlert(){
-  const el=$("#alert"), low=lowItems(), reqs=pending();
+  const el=$("#alert"), low=lowItems(), reqs=toBuy();
   if(!items.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してください。</p>`;return}
   if(!low.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>今は買い足すものはありません</h2><p class="hint">全部、在庫が十分あります。</p>`;return}
   el.className="alert";
@@ -302,11 +307,14 @@ function renderAlert(){
 }
 
 function reqHTML(r){
+  const home = r.done ? null : atHome(r);
   const it = r.done ? items.find(i=>i.id===r.added_item) : (r.count ? matchItem(r.name) : null);
-  const plus = it && (r.done ? r.added_qty : r.count) ? `<span class="plus">${r.done?"在庫に足しました":"買ったら在庫に"} +${r.done?r.added_qty:r.count}（${esc(it.name)}）</span>` : "";
-  return `<div class="req ${r.done?"done":""}" data-req="${esc(r.id)}" role="checkbox" aria-checked="${r.done}" tabindex="0">
+  const note = home
+    ? `<span class="home-note">家に${home.qty}あり・買わなくてOK</span>`
+    : it && (r.done ? r.added_qty : r.count) ? `<span class="plus">${r.done?"在庫に足しました":"買ったら在庫に"} +${r.done?r.added_qty:r.count}（${esc(it.name)}）</span>` : "";
+  return `<div class="req ${r.done?"done":""} ${home?"home":""}" data-req="${esc(r.id)}" role="checkbox" aria-checked="${r.done}" tabindex="0">
     <span class="check" aria-hidden="true">✓</span>
-    <div class="what"><b>${esc(r.name)}</b>${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}${plus}</div>
+    <div class="what"><b>${esc(r.name)}</b>${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}${note}</div>
   </div>`;
 }
 
@@ -334,7 +342,7 @@ function renderView(){
       ${groups.map(([c,list])=>`<div class="group"><h3>${esc(c)}</h3><div class="list">${list.map(rowHTML).join("")}</div></div>`).join("")}</div>`;
   }else{
     const buy=lowItems(), ok=sorted().filter(i=>level(i)==="ok");
-    const reqs=[...pending(), ...requests.filter(r=>r.done)];
+    const reqs=[...toBuy(), ...pending().filter(r=>atHome(r)), ...requests.filter(r=>r.done)];
     const doneCount=requests.length-pending().length;
     v.innerHTML=`<div class="stack shop">
       <section><h3>頼まれたもの</h3>
@@ -410,7 +418,7 @@ let draft=[];
 function renderPreview(){
   const pv=$("#preview");
   pv.innerHTML = draft.length
-    ? `<p class="hint">この ${draft.length} 件を登録します（違うものは × で外せます）</p>`+draft.map((r,i)=>`<div class="pv"><b>${esc(r.name)}</b>${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}<button type="button" data-drop="${i}" aria-label="${esc(r.name)}を外す">×</button></div>`).join("")
+    ? `<p class="hint">この ${draft.length} 件を登録します（違うものは × で外せます）</p>`+draft.map((r,i)=>{const h=atHome(r);return `<div class="pv"><b>${esc(r.name)}</b>${h?`<span class="home-note">家に${h.qty}あり</span>`:""}${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}<button type="button" data-drop="${i}" aria-label="${esc(r.name)}を外す">×</button></div>`}).join("")
     : ($("#pasteText").value.trim() ? `<p class="hint">品目を読み取れませんでした。1行に1品で書いてあるか確認してください。</p>` : "");
   $("#pasteAdd").disabled=!draft.length;
 }
