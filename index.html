@@ -41,7 +41,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 [hidden]{display:none!important}
 .wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:16px 72px;display:flex;flex-direction:column;gap:18px}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-header .brand{display:flex;align-items:center;gap:10px;min-width:0}
+header .hbtns{display:flex;gap:8px;flex:none}
+a.iconbtn{text-decoration:none;font-weight:700;font-family:var(--display)}
 /* ぬいぐるみのシャツのボーダー */
 .stripes{height:10px;border-radius:999px;background:repeating-linear-gradient(90deg,var(--stripe) 0 10px,var(--surface) 10px 20px);border:1px solid var(--line)}
 .mascot{display:block;flex:none}
@@ -166,6 +167,10 @@ textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);borde
 .preview{display:flex;flex-direction:column;gap:4px}
 .preview .pv{display:flex;align-items:center;gap:10px;padding:6px 4px 6px 10px;border-radius:9px;background:var(--sunk)}
 .preview .pv b{flex:1;min-width:0;overflow-wrap:anywhere}
+.preview .pv{flex-wrap:wrap}
+.preview .pv.skip{background:var(--crit-bg)}
+.part-note{font-size:12px;font-weight:700;color:var(--warn)}
+.preview .pv.skip b,.preview .pv.skip .amt{text-decoration:line-through;text-decoration-color:var(--crit);text-decoration-thickness:2px;color:var(--muted)}
 .preview .pv button{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;color:var(--muted);font-size:18px;border-radius:8px}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
@@ -328,7 +333,10 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
       <h1>DEBUとCHIKAのストック帳</h1>
       <p class="sub">残り1つ以下になったら「買うもの」に出ます</p>
     </div>
-    <button class="iconbtn" id="gearBtn" aria-label="設定">⚙<span class="badge" id="gearBadge" hidden></span></button>
+    <div class="hbtns">
+      <a class="iconbtn" href="guide.html" id="guideBtn" aria-label="使い方">？</a>
+      <button class="iconbtn" id="gearBtn" aria-label="設定">⚙<span class="badge" id="gearBadge" hidden></span></button>
+    </div>
   </header>
   <div class="stripes" aria-hidden="true"></div>
 
@@ -430,8 +438,26 @@ const sorted = () => [...items].sort((a,b)=>(CATS.indexOf(a.cat)-CATS.indexOf(b.
 const lowItems = () => sorted().filter(i=>level(i)!=="ok").sort((a,b)=>a.qty-b.qty);
 
 const pending = () => requests.filter(r=>!r.done);
-// 頼まれたけれど、家に十分ある（在庫が「十分ある」状態の）もの
-const atHome = r => { const it=matchItem(r.name); return it && level(it)==="ok" ? it : null; };
+// 頼まれたもの（量の指定なし）で、家に十分あるもの。リストで赤線を引く
+const atHome = r => { if(r.amount||r.count) return null; const it=matchItem(r.name); return it && level(it)==="ok" ? it : null; };
+
+// LINE から貼り付けたものを、在庫と比べて判定する
+//   skip    … 家に足りている → 追加しない
+//   partial … 家にあるが足りない → 足りない数だけ追加
+//   check   … グラムなどで比べられない → 追加して「量を確認」
+//   add     … 家にない → そのまま追加
+function judge(r){
+  const it=matchItem(r.name);
+  if(!it) return {mode:"add"};
+  if(r.count){
+    if(it.qty>=r.count) return {mode:"skip",it};
+    if(it.qty>0) return {mode:"partial",it,short:r.count-it.qty};
+    return {mode:"add",it};
+  }
+  if(!r.amount) return level(it)==="ok" ? {mode:"skip",it} : {mode:"add",it};
+  return it.qty>0 ? {mode:"check",it} : {mode:"add",it};
+}
+const unitOf = r => r.amount.replace(/^[\d.]+/,"");
 const toBuy = () => pending().filter(r=>!atHome(r));
 const amtText = r => r.amount ? (/^\d+(\.\d+)?$/.test(r.amount) ? "×"+r.amount : r.amount) : "";
 
@@ -440,7 +466,7 @@ const mascot = (mood, size) => `<svg class="mascot ${size}" viewBox="0 0 120 140
 function renderAlert(){
   const el=$("#alert"), low=lowItems(), reqs=toBuy();
   renderFriend(low.length+reqs.length);
-  if(!items.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してね。</p>`;return}
+  if(!items.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してね。使い方は右上の「？」で見られるよ。</p>`;return}
   if(!low.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>今日は買わなくて大丈夫</h2><p class="hint">全部、家に十分あるよ。</p>`;return}
   el.className="alert";
   el.innerHTML=`<h2>買うもの <span class="n">${low.length+reqs.length}</span></h2>
@@ -591,19 +617,31 @@ function matchItem(name){
 let draft=[];
 function renderPreview(){
   const pv=$("#preview");
+  const add=draft.filter(r=>judge(r).mode!=="skip").length, skip=draft.length-add;
+  const note = (r,j) => j.mode==="skip" ? `<span class="home-note">家に${j.it.qty}あり・追加しません</span>`
+    : j.mode==="partial" ? `<span class="part-note">家に${j.it.qty}あり → あと${j.short}${esc(unitOf(r))}を追加</span>`
+    : j.mode==="check" ? `<span class="part-note">家に${j.it.qty}あり・量を確認してね</span>` : "";
   pv.innerHTML = draft.length
-    ? `<p class="hint">この ${draft.length} 件を登録します（違うものは × で外せます）</p>`+draft.map((r,i)=>{const h=atHome(r);return `<div class="pv"><b>${esc(r.name)}</b>${h?`<span class="home-note">家に${h.qty}あり</span>`:""}${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}<button type="button" data-drop="${i}" aria-label="${esc(r.name)}を外す">×</button></div>`}).join("")
+    ? `<p class="hint">${add} 件を追加します${skip?`（家に足りている ${skip} 件は追加しません）`:""}。違うものは × で外せます。</p>`+draft.map((r,i)=>{const j=judge(r);return `<div class="pv ${j.mode==="skip"?"skip":""}"><b>${esc(r.name)}</b>${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}${note(r,j)}<button type="button" data-drop="${i}" aria-label="${esc(r.name)}を外す">×</button></div>`}).join("")
     : ($("#pasteText").value.trim() ? `<p class="hint">品目を読み取れませんでした。1行に1品で書いてあるか確認してください。</p>` : "");
-  $("#pasteAdd").disabled=!draft.length;
+  $("#pasteAdd").disabled=!add;
 }
 $("#pasteText").addEventListener("input",()=>{draft=parseList($("#pasteText").value);renderPreview()});
 $("#pasteClear").onclick=()=>{$("#pasteText").value="";draft=[];renderPreview()};
 $("#preview").addEventListener("click",e=>{const b=e.target.closest("[data-drop]");if(b){draft.splice(Number(b.dataset.drop),1);renderPreview()}});
 $("#pasteAdd").onclick=async()=>{
-  const rows=draft.map(r=>({name:r.name,amount:r.amount,count:r.count}));
+  // 家に足りているものは追加しない。足りないものは、足りない数だけ追加する
+  const rows=[];
+  for(const r of draft){
+    const j=judge(r);
+    if(j.mode==="skip") continue;
+    if(j.mode==="partial") rows.push({name:r.name, amount:`${j.short}${unitOf(r)}（頼まれた${r.amount}）`.slice(0,20), count:j.short});
+    else rows.push({name:r.name,amount:r.amount,count:r.count});
+  }
+  const skip=draft.length-rows.length;
   if(!rows.length) return;
   $("#pasteAdd").disabled=true;
-  const data=await run(sb.from("requests").insert(rows).select("id,name,amount,count,done,added_item,added_qty,created_at"), `${rows.length} 件を頼まれたものに追加しました`);
+  const data=await run(sb.from("requests").insert(rows).select("id,name,amount,count,done,added_item,added_qty,created_at"), `${rows.length} 件を追加しました${skip?`（家にある ${skip} 件は追加していません）`:""}`);
   if(data){requests.push(...data);$("#pasteText").value="";draft=[];renderPreview();$("#pastePanel").open=false;render()}
   else $("#pasteAdd").disabled=false;
 };
@@ -831,6 +869,9 @@ $("#newPassForm").addEventListener("submit",async e=>{
 (function opening(){
   const el=$("#opening"), txt=$("#opText");
   const lines=["いっしょに","おうちの在庫を","見ていこうね"];
+  // 使い方のページから戻ってきたときは、オープニングを出さない
+  try{ if(sessionStorage.getItem("skipOpening")){ sessionStorage.removeItem("skipOpening"); el.remove(); return; } }catch(_){}
+  $("#guideBtn").addEventListener("click",()=>{ try{sessionStorage.setItem("skipOpening","1")}catch(_){} });
   const still=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const timers=[];
   const later=(fn,ms)=>timers.push(setTimeout(fn,ms));

@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>使い方 | DEBUとCHIKAのストック帳</title>
+<meta name="theme-color" content="#3E68B0">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Maru+Gothic:wght@700;900&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#FAF7F1; --surface:#FFFFFF; --sunk:#EFEBE3; --ink:#2B2724; --muted:#6F675F; --line:#E2DCD1;
+  --accent:#3E68B0; --accent-ink:#FFFFFF; --stripe:#6F93CF;
+  --ok:#4C8A3C; --ok-bg:#E6F1DE; --warn:#A25A00; --warn-bg:#FCEBCB; --crit:#C23F35; --crit-bg:#FBE3DF;
+  --display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --bg:#16181D; --surface:#1F2229; --sunk:#282C35; --ink:#ECE8E2; --muted:#A8A198; --line:#343944;
+    --accent:#8FB1EC; --accent-ink:#11151C; --stripe:#4F6FA8;
+    --ok:#9ACF86; --ok-bg:#223020; --warn:#F2B862; --warn-bg:#3A2C12; --crit:#FF8E82; --crit-bg:#43201D;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.75;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:14px 64px;display:flex;flex-direction:column;gap:28px}
+a{color:var(--accent)}
+.back{display:inline-flex;align-items:center;gap:6px;font-weight:700;text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px;width:max-content;color:var(--ink)}
+.stripes{height:10px;border-radius:999px;background:repeating-linear-gradient(90deg,var(--stripe) 0 10px,var(--surface) 10px 20px);border:1px solid var(--line)}
+h1{font-family:var(--display);font-weight:900;font-size:26px;line-height:1.35;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:900;font-size:21px;line-height:1.4;margin:0;display:flex;align-items:center;gap:10px;text-wrap:balance}
+h3{font-family:var(--display);font-size:17px;margin:0}
+p{margin:0}
+.num{flex:none;width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:18px}
+.mascot{display:block;flex:none}
+.hello{display:flex;align-items:flex-end;gap:12px}
+.hello .mascot{width:96px;height:112px}
+.bubble{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:15px}
+.bubble::before{content:"";position:absolute;left:-7px;bottom:18px;width:12px;height:12px;background:var(--surface);border-left:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+section{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:14px}
+ol.steps > li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+ol.steps > li::before{content:counter(s);width:28px;height:28px;border-radius:8px;background:var(--sunk);color:var(--ink);font-weight:700;display:grid;place-items:center;font-size:15px;margin-top:2px}
+b.key{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:1px 8px;font-weight:700;white-space:nowrap}
+.tip{display:flex;gap:10px;align-items:flex-start;background:var(--ok-bg);border-radius:12px;padding:12px}
+.tip .mascot{width:44px;height:52px}
+.tip p{font-size:15px}
+.warn-tip{background:var(--warn-bg)}
+
+/* アプリの画面の見本（押しても何も起きない） */
+.sample{border:2px dashed var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;pointer-events:none;user-select:none;background:var(--bg)}
+.sample-label{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.08em}
+.s-tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:12px}
+.s-tabs span{flex:1;text-align:center;font-weight:700;padding:8px;border-radius:9px;color:var(--muted);font-size:15px}
+.s-tabs span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.s-tabs span.pointed{outline:3px solid var(--crit);outline-offset:1px}
+.s-list{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.s-row{display:grid;grid-template-columns:6px 1fr auto;align-items:center;gap:10px;padding:8px 10px 8px 0;border-top:1px solid var(--line)}
+.s-row:first-child{border-top:0}
+.s-row .stripe{align-self:stretch}
+.s-row.one .stripe{background:var(--warn)} .s-row.zero .stripe{background:var(--crit)}
+.s-name{font-weight:700;font-size:15px;display:flex;flex-direction:column;line-height:1.4}
+.pill{font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;width:max-content;margin-top:2px}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.one{background:var(--warn-bg);color:var(--warn)} .pill.zero{background:var(--crit-bg);color:var(--crit)}
+.s-step{display:flex;align-items:center;gap:2px}
+.s-step span{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--sunk);display:grid;place-items:center;font-size:20px}
+.s-step span.pointed{outline:3px solid var(--crit)}
+.s-step b{min-width:34px;text-align:center;font-family:var(--display);font-size:20px}
+.s-alert{border-radius:14px;padding:12px 14px;border:1.5px solid var(--crit);background:var(--crit-bg);display:flex;flex-direction:column;gap:8px}
+.s-alert.calm{border-color:var(--ok);background:var(--ok-bg)}
+.s-alert h3{display:flex;align-items:center;gap:8px}
+.s-alert.calm h3{color:var(--ok)}
+.s-n{background:var(--crit);color:#fff;border-radius:999px;padding:0 9px;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;border-radius:999px;padding:2px 10px;background:var(--surface);border:1px solid var(--line)}
+.chip b{margin-left:4px} .chip.zero b{color:var(--crit)} .chip.one b{color:var(--warn)} .chip.asked b{color:var(--accent)}
+.s-field{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.s-field div{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:15px;color:var(--ink);min-height:40px}
+.s-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.s-grid .wide{grid-column:1/-1}
+.s-btn{align-self:flex-end;border-radius:10px;padding:8px 18px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
+.s-btn.gray{background:var(--sunk);color:var(--ink);border:1px solid var(--line)}
+.s-btn.pointed{outline:3px solid var(--crit);outline-offset:2px}
+.s-pv{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border-radius:9px;background:var(--sunk);font-size:15px}
+.s-pv b{flex:1}
+.s-pv.skip{background:var(--crit-bg)}
+.s-pv.skip b,.s-pv.skip .amt{text-decoration:line-through;text-decoration-color:var(--crit);text-decoration-thickness:2px;color:var(--muted)}
+.amt{font-family:var(--display);color:var(--accent)}
+.home-note{font-size:12px;font-weight:700;color:var(--crit)}
+.part-note{font-size:12px;font-weight:700;color:var(--warn)}
+.s-req{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;padding:8px 10px;border-top:1px solid var(--line)}
+.s-req:first-child{border-top:0}
+.s-check{width:28px;height:28px;border-radius:8px;border:2px solid var(--line);background:var(--bg);display:grid;place-items:center;color:transparent;font-weight:700}
+.s-req.done .s-check{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.s-req.done b,.s-req.done .amt{text-decoration:line-through;color:var(--muted)}
+.s-req.pointed .s-check{outline:3px solid var(--crit);outline-offset:2px}
+.s-plus{font-size:12px;color:var(--muted);display:block}
+.s-paper{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:15px;white-space:pre-line}
+.line-msg{align-self:flex-start;background:#8DE055;color:#1b2a12;border-radius:16px;padding:8px 14px;font-size:15px;white-space:pre-line;max-width:80%}
+.pointer-note{font-size:13px;color:var(--crit);font-weight:700}
+dl.qa{margin:0;display:flex;flex-direction:column;gap:14px}
+dl.qa dt{font-weight:700;font-family:var(--display)}
+dl.qa dt::before{content:"Q. ";color:var(--accent)}
+dl.qa dd{margin:2px 0 0}
+dl.qa dd::before{content:"A. ";font-weight:700;color:var(--ok)}
+.foot{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="./">← アプリにもどる</a>
+
+  <div class="hello">
+    <svg class="mascot" viewBox="0 0 120 140" aria-hidden="true"><use href="#m-happy"/></svg>
+    <div class="bubble">CHIKAちゃん、<br>使い方を説明するね。<br>ゆっくりで大丈夫だよ</div>
+  </div>
+
+  <div>
+    <h1>ストック帳の使い方</h1>
+  </div>
+  <div class="stripes" aria-hidden="true"></div>
+
+  <div class="tip">
+    <svg class="mascot" viewBox="0 0 120 140" aria-hidden="true"><use href="#m-normal"/></svg>
+    <p><b>どこを押しても、アプリがこわれることはないよ。</b>まちがえても、もう一度押せば元にもどせるから安心してね。点線の四角は、アプリの画面の見本だよ（見本は押しても動かないよ）。</p>
+  </div>
+
+  <!-- はじめに -->
+  <section>
+    <h2>アプリの開き方</h2>
+    <div class="card">
+      <ol class="steps">
+        <li><p>iPhoneのホーム画面にある、<b>うーの顔のアイコン</b>（名前は「ストック帳」）を押す</p></li>
+        <li><p>うーが出てきて「いっしょに おうちの在庫を 見ていこうね」と言うよ</p></li>
+        <li><p><b>うーを押す</b>と、うーがゆれて、アプリの中に入れるよ</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section>
+    <h2><span class="num">1</span>家に置いておきたいものを登録する</h2>
+    <p>最初に1回だけやること。「切らしたら困るもの」を登録するよ。</p>
+    <div class="card">
+      <ol class="steps">
+        <li><p>画面の上のほうにある <b class="key">在庫</b> を押す</p></li>
+        <li><p>画面を<b>いちばん下まで</b>指で上にすべらせる（スクロール）と、「品目を追加」があるよ</p></li>
+        <li><p>4つの欄をうめる
+          <br>・<b>品名</b>：ものの名前（例：トイレットペーパー）
+          <br>・<b>分類</b>：押すと選べるよ（冷蔵、日用品など）
+          <br>・<b>今ある数</b>：いま家にある数
+          <br>・<b>知らせる数</b>：<b>1 のままでOK</b></p></li>
+        <li><p><b class="key">追加</b> を押す。これで1つ登録できたよ</p></li>
+      </ol>
+      <div class="sample" aria-hidden="true">
+        <span class="sample-label">アプリの画面（見本）</span>
+        <b style="font-family:var(--display)">品目を追加</b>
+        <div class="s-grid">
+          <div class="s-field wide">品名<div>トイレットペーパー</div></div>
+          <div class="s-field">分類<div>日用品 ▾</div></div>
+          <div class="s-field">今ある数<div>4</div></div>
+          <div class="s-field">知らせる数<div>1</div></div>
+        </div>
+        <span class="s-btn pointed">追加</span>
+        <span class="pointer-note" style="align-self:flex-end">↑ 最後にここを押す</span>
+      </div>
+    </div>
+    <div class="tip">
+      <svg class="mascot" viewBox="0 0 120 140" aria-hidden="true"><use href="#m-happy"/></svg>
+      <p>全部いっぺんにやらなくて大丈夫。まずは<b>10個くらい</b>から始めて、思い出したときに足していこうね。</p>
+    </div>
+
+    <h3>毎日やること（これだけ！）</h3>
+    <div class="card">
+      <p><b>使い切ったら <b class="key">−</b></b>、<b>買ってきたら <b class="key">＋</b></b> を押すだけ。</p>
+      <div class="sample" aria-hidden="true">
+        <span class="sample-label">アプリの画面（見本）</span>
+        <div class="s-list">
+          <div class="s-row"><span class="stripe"></span><div class="s-name">トイレットペーパー<span class="pill ok">十分ある</span></div><div class="s-step"><span class="pointed">−</span><b>4</b><span>＋</span></div></div>
+          <div class="s-row one"><span class="stripe"></span><div class="s-name">牛乳<span class="pill one">残り1</span></div><div class="s-step"><span>−</span><b>1</b><span class="pointed">＋</span></div></div>
+        </div>
+        <span class="pointer-note">左の − が「使った」、右の ＋ が「買ってきた」</span>
+      </div>
+      <p>名前をまちがえたときや、もう使わないものは、<b>品名を押す</b>と直したり削除したりできるよ。</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <h2><span class="num">2</span>買い物が必要か確認する</h2>
+    <div class="card">
+      <p>アプリを開いたら、<b>いちばん上のうー</b>と、<b>その下の枠</b>を見てね。</p>
+      <div class="sample" aria-hidden="true">
+        <span class="sample-label">買うものがあるとき（見本）</span>
+        <div class="hello"><svg class="mascot" viewBox="0 0 120 140" style="width:64px;height:75px"><use href="#m-worried"/></svg><div class="bubble">買うものが<br><b>2こ</b> あるよ</div></div>
+        <div class="s-alert"><h3>買うもの <span class="s-n">2</span></h3>
+          <div class="chips"><span class="chip zero">ツナ缶<b>欠品</b></span><span class="chip one">牛乳<b>残り1</b></span></div></div>
+      </div>
+      <p>うーが<b>困った顔</b>で、<b>赤い枠</b>が出ていたら、そこに書いてあるものを買ってきてね。</p>
+      <div class="sample" aria-hidden="true">
+        <span class="sample-label">買うものがないとき（見本）</span>
+        <div class="hello"><svg class="mascot" viewBox="0 0 120 140" style="width:64px;height:75px"><use href="#m-happy"/></svg><div class="bubble">今日は<br>買わなくて大丈夫だよ</div></div>
+      </div>
+      <p>うーが<b>にっこり</b>していたら、今日は何も買わなくて大丈夫。</p>
+    </div>
+
+    <h3>スーパーでは「お店で見る」</h3>
+    <div class="card">
+      <p>お店に着いたら、上の <b class="key">お店で見る</b> を押してね。上から順に、</p>
+      <ol class="steps">
+        <li><p><b>頼まれたもの</b>：DEBUからLINEで頼まれたもの</p></li>
+        <li><p><b>在庫が少ないもの</b>：残り1つ・なくなったもの</p></li>
+        <li><p><b>家にまだあるので買わない</b>：<b>ここに書いてあるものは買わなくてOK！</b></p></li>
+      </ol>
+    </div>
+
+    <div class="tip">
+      <svg class="mascot" viewBox="0 0 120 140" aria-hidden="true"><use href="#m-normal"/></svg>
+      <p>残り1つになると、<b>iPhoneに通知</b>も届くよ。通知が来ないときは、右上の <b class="key">⚙</b> →「通知をオンにする」→「許可」を押してね。</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <h2><span class="num">3</span>DEBUからLINEで頼まれたとき</h2>
+    <p>LINEのメッセージを貼り付けると、家の在庫と比べて<b>足りないものだけ</b>が自動で入るよ。家に足りているものは入らないから安心してね。</p>
+    <div class="card">
+      <ol class="steps">
+        <li><p>LINEで、DEBUのメッセージを<b>長押し</b>して <b class="key">コピー</b> を押す</p></li>
+        <li><p>このアプリを開いて、上の <b class="key">お店で見る</b> を押す</p></li>
+        <li><p><b class="key">LINEのメッセージから追加</b> を押す</p></li>
+        <li><p>出てきた白い欄を<b>長押し</b>して <b class="key">ペースト</b> を押す</p></li>
+        <li><p>すぐ下に一覧が出るよ。そのままでOK
+          <br>・<b style="color:var(--crit)">赤い線</b>：家に足りているから、追加しない
+          <br>・<b style="color:var(--warn)">「あと○個を追加」</b>：家にあるけど足りないから、足りない分だけ追加する
+          <br>・何も書いてないもの：家にないから、そのまま追加する</p></li>
+        <li><p><b class="key">登録</b> を押す。必要なものだけが「頼まれたもの」に入るよ</p></li>
+      </ol>
+      <div class="sample" aria-hidden="true">
+        <span class="sample-label">LINE（見本）</span>
+        <div class="line-msg">帰りに買ってきて！
+・牛乳 2本
+・豚バラ 300g
+・玉ねぎ 5個</div>
+        <span class="sample-label">アプリの画面（見本）</span>
+        <div class="s-paper">帰りに買ってきて！
+・牛乳 2本
+・豚バラ 300g
+・玉ねぎ 5個</div>
+        <p style="font-size:13px;color:var(--muted)">2 件を追加します（家に足りている 1 件は追加しません）。</p>
+        <div class="s-pv skip"><b>牛乳</b><span class="amt">2本</span><span class="home-note">家に3あり・追加しません</span></div>
+        <div class="s-pv"><b>豚バラ</b><span class="amt">300g</span></div>
+        <div class="s-pv"><b>玉ねぎ</b><span class="amt">5個</span><span class="part-note">家に2あり → あと3個を追加</span></div>
+        <span class="s-btn pointed">登録</span>
+      </div>
+      <p>「帰りに買ってきて！」みたいな文は、自動で読み飛ばすよ。変なものが入っていたら、右の <b class="key">×</b> で外してね。</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <h2><span class="num">4</span>買ったらチェック、最後にお片付け</h2>
+    <div class="card">
+      <ol class="steps">
+        <li><p>お店で <b class="key">お店で見る</b> を開いておく</p></li>
+        <li><p>カゴに入れたら、<b>「頼まれたもの」の □ を押して ✓</b> を付ける。家の在庫の数も自動で増えるよ</p></li>
+        <li><p>「在庫が少ないもの」を買ったら、その <b class="key">＋</b> を押す</p></li>
+        <li><p>家に帰ったら、<b class="key">買ったもの（○件）を消す</b> を押して、おしまい！</p></li>
+      </ol>
+      <div class="sample" aria-hidden="true">
+        <span class="sample-label">アプリの画面（見本）</span>
+        <b style="font-family:var(--display)">頼まれたもの</b>
+        <div class="s-list">
+          <div class="s-req done"><span class="s-check">✓</span><div><b>豚バラ</b> <span class="amt">300g</span></div></div>
+          <div class="s-req pointed"><span class="s-check">✓</span><div><b>玉ねぎ</b> <span class="amt">3個</span></div></div>
+        </div>
+        <span class="pointer-note">↑ 買ったら □ を押して ✓ にする</span>
+        <span class="s-btn gray pointed">買ったもの（1件）を消す</span>
+      </div>
+    </div>
+    <div class="tip">
+      <svg class="mascot" viewBox="0 0 120 140" aria-hidden="true"><use href="#m-happy"/></svg>
+      <p><b>売り切れで買えなかったもの</b>は、✓ を付けずにそのまま残しておけば、次の買い物でまた出てくるよ。もういらなくなったら、右の <b class="key">×</b> で消してね。</p>
+    </div>
+  </section>
+
+  <!-- 困ったとき -->
+  <section>
+    <h2>困ったとき</h2>
+    <div class="card">
+      <dl class="qa">
+        <div><dt>押しまちがえた！</dt><dd>✓ はもう一度押せば元にもどるよ。数は − と ＋ で直せるよ。</dd></div>
+        <div><dt>通知が来ない</dt><dd>右上の ⚙ →「通知をオンにする」→「許可」を押してね。「拒否されています」と出たら、iPhoneの「設定」→「通知」→「ストック帳」をオンにしてね。</dd></div>
+        <div><dt>ログインの画面が出てきた</dt><dd>登録したメールアドレスとパスワードを入れて「ログイン」を押してね。パスワードを忘れたらDEBUに言ってね。</dd></div>
+        <div><dt>画面がおかしい・動かない</dt><dd>アプリを一度閉じて（画面の下から上にすべらせて、アプリを上にはらう）、もう一度開いてみてね。</dd></div>
+        <div><dt>それでもわからない</dt><dd>DEBUに聞いてね！</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <div class="foot">
+    <svg class="mascot" viewBox="0 0 120 140" style="width:96px;height:112px" aria-hidden="true"><use href="#m-happy"/></svg>
+    <p><b>いつも ありがとう！</b></p>
+    <a class="back" href="./">← アプリにもどる</a>
+  </div>
+</div>
+
+<script>
+// うーの絵はアプリ本体（index.html）から借りてくる
+fetch("./").then(r=>r.text()).then(html=>{
+  const doc=new DOMParser().parseFromString(html,"text/html");
+  const defs=doc.querySelector("svg defs");
+  if(defs){ const svg=defs.closest("svg"); document.body.prepend(document.importNode(svg,true)); }
+}).catch(()=>{});
+// アプリにもどるときはオープニングを出さない
+document.querySelectorAll("a.back").forEach(a=>a.addEventListener("click",()=>{try{sessionStorage.setItem("skipOpening","1")}catch(_){}}));
+</script>
+</body>
+</html>

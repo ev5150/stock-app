@@ -1,12 +1,13 @@
 // アプリの画面をオフラインでも開けるようにし、在庫の通知を表示する。
 // 画面のファイルを変えたら VERSION を上げると、スマホ側も新しい版に入れ替わる。
-const VERSION = "v10";
+const VERSION = "v11";
 const CACHE = `stock-${VERSION}`;
 const SHELL = [
   "./",
   "./index.html",
   "./config.js",
   "./manifest.webmanifest",
+  "./guide.html",
   "./icons/icon-192.png",
   "./icons/apple-touch-icon.png",
 ];
