@@ -91,7 +91,10 @@ h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spa
 .nobuy span{font-size:14px;padding:4px 10px;border-radius:8px;background:var(--ok-bg);color:var(--ok);font-variant-numeric:tabular-nums}
 
 /* 頼まれたもの */
-.req{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--line);cursor:pointer}
+.req{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:10px 6px 10px 12px;border-top:1px solid var(--line);cursor:pointer}
+.req .del{all:unset;cursor:pointer;width:40px;height:40px;display:grid;place-items:center;color:var(--muted);font-size:20px;border-radius:10px}
+.req .del:focus-visible{outline:2px solid var(--accent)}
+.reqactions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .req:first-child{border-top:0}
 .check{width:32px;height:32px;border-radius:9px;border:2px solid var(--line);background:var(--bg);color:transparent;font-size:18px;font-weight:700;display:grid;place-items:center;cursor:pointer;padding:0}
 .req.done .check{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -278,6 +281,7 @@ const pushSupported = "serviceWorker" in navigator && "PushManager" in window &&
 let sb = null, session = null;
 let items = [];
 let requests = [];
+let confirmClearAll = false, confirmTimer;
 let tab = new URLSearchParams(location.search).get("tab")==="shop" ? "shop" : "stock";
 let editing = null, confirmDel = false;
 let inflight = 0;
@@ -315,6 +319,7 @@ function reqHTML(r){
   return `<div class="req ${r.done?"done":""} ${home?"home":""}" data-req="${esc(r.id)}" role="checkbox" aria-checked="${r.done}" tabindex="0">
     <span class="check" aria-hidden="true">✓</span>
     <div class="what"><b>${esc(r.name)}</b>${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}${note}</div>
+    <button type="button" class="del" data-delreq="${esc(r.id)}" aria-label="${esc(r.name)}をリストから消す">×</button>
   </div>`;
 }
 
@@ -347,7 +352,10 @@ function renderView(){
     v.innerHTML=`<div class="stack shop">
       <section><h3>頼まれたもの</h3>
         <div class="list">${reqs.length?reqs.map(reqHTML).join(""):`<div class="empty">上の「LINEのメッセージから追加」で登録できます</div>`}</div>
-        ${doneCount?`<button type="button" class="linkbtn" id="clearDone">買ったもの ${doneCount} 件をリストから消す</button>`:""}
+        ${requests.length?`<div class="reqactions">
+          ${doneCount?`<button type="button" class="btn" id="clearDone">買ったもの（${doneCount}件）を消す</button>`:""}
+          <button type="button" class="btn danger" id="clearAll">${confirmClearAll?"本当に全部消す":"全部消す"}</button>
+        </div>`:""}
       </section>
       <section><h3>在庫が少ないもの</h3>
         <div class="list">${buy.length?buy.map(rowHTML).join(""):`<div class="empty">買い足すものはありません</div>`}</div>
@@ -486,10 +494,24 @@ document.addEventListener("click",async e=>{
     await run(sb.rpc("adjust_qty",{item_id:id,delta:d}));
     return;
   }
+  const dq=e.target.closest("[data-delreq]");
+  if(dq){
+    const id=dq.dataset.delreq, r=requests.find(x=>x.id===id);
+    requests=requests.filter(x=>x.id!==id); render();
+    await run(sb.from("requests").delete().eq("id",id), `${r?r.name:"品目"}をリストから消しました`);
+    return;
+  }
   const rq=e.target.closest("[data-req]"); if(rq){toggleReq(rq.dataset.req);return}
   if(e.target.closest("#clearDone")){
-    requests=pending(); render();
+    confirmClearAll=false; requests=pending(); render();
     await run(sb.from("requests").delete().eq("done",true), "買ったものをリストから消しました");
+    return;
+  }
+  if(e.target.closest("#clearAll")){
+    if(!confirmClearAll){confirmClearAll=true; renderView(); clearTimeout(confirmTimer); confirmTimer=setTimeout(()=>{confirmClearAll=false;renderView()},5000); return}
+    confirmClearAll=false; clearTimeout(confirmTimer);
+    const ids=requests.map(r=>r.id); requests=[]; render();
+    await run(sb.from("requests").delete().in("id",ids), "頼まれたものを全部消しました");
     return;
   }
   const ed=e.target.closest("[data-edit]"); if(ed){startEdit(ed.dataset.edit);return}
@@ -651,7 +673,7 @@ async function enterApp(){
     .on("postgres_changes",{event:"*",schema:"public",table:"items"},scheduleLoad)
     .on("postgres_changes",{event:"*",schema:"public",table:"requests"},scheduleLoad)
     .subscribe();
-  document.addEventListener("keydown",e=>{const r=e.target.closest&&e.target.closest("[data-req]");if(r&&(e.key===" "||e.key==="Enter")){e.preventDefault();toggleReq(r.dataset.req)}});
+  document.addEventListener("keydown",e=>{if(e.target.closest&&e.target.closest("[data-delreq]"))return;const r=e.target.closest&&e.target.closest("[data-req]");if(r&&(e.key===" "||e.key==="Enter")){e.preventDefault();toggleReq(r.dataset.req)}});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
 }
 
