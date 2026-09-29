@@ -66,6 +66,30 @@ h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spa
 .friend.hop .mascot{animation:hop .5s ease}
 @keyframes hop{0%,100%{transform:translateY(0)}35%{transform:translateY(-14px) rotate(-4deg)}65%{transform:translateY(0) rotate(3deg)}}
 @media (prefers-reduced-motion:reduce){.friend.hop .mascot{animation:none}}
+
+/* オープニング */
+.opening{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .5s ease;cursor:pointer}
+.opening.out{opacity:0;pointer-events:none}
+.op-band{position:absolute;left:0;right:0;height:18px;background:repeating-linear-gradient(90deg,var(--stripe) 0 14px,var(--surface) 14px 28px);animation:band 1.4s linear infinite}
+.op-band.top{top:calc(env(safe-area-inset-top,0px) + 24px)}
+.op-band.bottom{bottom:calc(env(safe-area-inset-bottom,0px) + 24px);animation-direction:reverse}
+@keyframes band{from{background-position:0 0}to{background-position:28px 0}}
+.op-stage{display:flex;flex-direction:column;align-items:center;gap:14px;padding-inline:16px}
+.op-bubble{display:grid;font-size:18px;line-height:1.7;text-align:center;opacity:0;animation:fadeup .4s .55s ease both}
+.op-bubble > span{grid-area:1/1}
+.op-ghost{visibility:hidden}
+.op-bubble::before{left:calc(50% - 6px);bottom:-7px;transform:rotate(-45deg)}
+.op-mascot{height:min(198px,30vh);width:auto;aspect-ratio:120/140;animation:pop .7s cubic-bezier(.3,1.6,.5,1) both}
+.op-mascot.hop{animation:hop .5s ease}
+.op-title{margin:0;text-align:center;text-wrap:balance;font-family:var(--display);font-weight:900;font-size:20px;letter-spacing:.04em;opacity:0}
+.op-title.show{animation:fadeup .5s ease both}
+@keyframes pop{0%{transform:translateY(60px) scale(.3);opacity:0}100%{transform:none;opacity:1}}
+@keyframes fadeup{0%{transform:translateY(8px);opacity:0}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .op-band,.op-mascot,.op-mascot.hop,.op-bubble,.op-title.show{animation:none}
+  .op-bubble,.op-title{opacity:1}
+  .opening{transition:none}
+}
 .alert.calm{border-color:var(--ok);background:var(--ok-bg)}
 .alert h2{margin:0;font-family:var(--display);font-size:18px;display:flex;align-items:center;gap:8px}
 .alert h2 .n{font-variant-numeric:tabular-nums;background:var(--crit);color:var(--surface);border-radius:999px;padding:0 10px;font-size:15px}
@@ -224,6 +248,20 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
     </symbol>
   </defs>
 </svg>
+
+<!-- オープニング（タップで飛ばせる） -->
+<div class="opening" id="opening" aria-hidden="true">
+  <div class="op-band top"></div>
+  <div class="op-stage">
+    <div class="bubble op-bubble">
+      <span class="op-ghost">いっしょに<br>おうちの在庫を<br>見ていこうね</span>
+      <span id="opText"></span>
+    </div>
+    <svg class="mascot op-mascot" id="opMascot" viewBox="0 0 120 140"><use id="opFace" href="#m-normal"/></svg>
+    <p class="op-title" id="opTitle">DEBUとCHIKAのストック帳</p>
+  </div>
+  <div class="op-band bottom"></div>
+</div>
 
 <!-- 設定が済んでいない -->
 <div class="wrap" id="scr-setup" hidden>
@@ -778,6 +816,38 @@ $("#newPassForm").addEventListener("submit",async e=>{
   recovering=false; $("#newPassForm").hidden=true; toast("パスワードを変更しました");
   enterApp();
 });
+
+/* ================= オープニング ================= */
+(function opening(){
+  const el=$("#opening"), txt=$("#opText");
+  const lines=["いっしょに","おうちの在庫を","見ていこうね"];
+  const still=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const timers=[];
+  const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
+  let closed=false;
+  function close(){
+    if(closed) return; closed=true;
+    timers.forEach(clearTimeout);
+    el.classList.add("out");
+    setTimeout(()=>el.remove(),600);
+  }
+  el.addEventListener("click",close);
+  if(still){
+    txt.innerHTML=lines.join("<br>");
+    $("#opFace").setAttribute("href","#m-happy");
+    later(close,1500);
+    return;
+  }
+  // 1文字ずつ表示
+  const chars=[]; lines.forEach((l,i)=>{[...l].forEach(c=>chars.push(c)); if(i<lines.length-1) chars.push("\n")});
+  let n=0;
+  const typeStart=750, perChar=75, typeEnd=typeStart+chars.length*perChar;
+  const tick=()=>{ n++; txt.innerHTML=esc(chars.slice(0,n).join("")).replace(/\n/g,"<br>"); if(n<chars.length) later(tick,perChar); };
+  later(tick,typeStart);
+  // 言い終わったら、にっこりしてぴょん
+  later(()=>{ $("#opFace").setAttribute("href","#m-happy"); const m=$("#opMascot"); m.classList.remove("hop"); void m.getBoundingClientRect(); m.classList.add("hop"); $("#opTitle").classList.add("show"); }, typeEnd+150);
+  later(close, typeEnd+1500);
+})();
 
 /* ================= 起動 ================= */
 let started=false;
