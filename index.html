@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>うちのストック帳</title>
+<title>DEBUとCHIKAのストック帳</title>
 <meta name="theme-color" content="#2F6B4F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ストック帳">
@@ -40,7 +40,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 [hidden]{display:none!important}
 .wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:16px 72px;display:flex;flex-direction:column;gap:18px}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-h1{font-family:var(--display);font-weight:900;font-size:26px;margin:0;letter-spacing:.02em}
+h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spacing:.02em;text-wrap:balance}
 .sub{color:var(--muted);font-size:13px;margin:2px 0 0}
 .iconbtn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;cursor:pointer;display:grid;place-items:center}
 .iconbtn .badge{position:absolute;margin:-26px -26px 0 0;width:10px;height:10px;border-radius:50%;background:var(--crit)}
@@ -90,6 +90,31 @@ h1{font-family:var(--display);font-weight:900;font-size:26px;margin:0;letter-spa
 .nobuy{display:flex;flex-wrap:wrap;gap:6px}
 .nobuy span{font-size:14px;padding:4px 10px;border-radius:8px;background:var(--ok-bg);color:var(--ok);font-variant-numeric:tabular-nums}
 
+/* 頼まれたもの */
+.req{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--line);cursor:pointer}
+.req:first-child{border-top:0}
+.check{width:32px;height:32px;border-radius:9px;border:2px solid var(--line);background:var(--bg);color:transparent;font-size:18px;font-weight:700;display:grid;place-items:center;cursor:pointer;padding:0}
+.req.done .check{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.req .what{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-width:0}
+.req .what b{overflow-wrap:anywhere}
+.amt{font-family:var(--display);font-variant-numeric:tabular-nums;color:var(--accent)}
+.plus{font-size:12px;color:var(--muted)}
+.req.done .what b,.req.done .amt{text-decoration:line-through;color:var(--muted)}
+.linkbtn{all:unset;cursor:pointer;font-size:13px;color:var(--muted);text-decoration:underline;align-self:flex-end}
+.chip.asked b{color:var(--accent)}
+
+/* LINE から追加 */
+.paste summary{cursor:pointer;font-family:var(--display);font-size:16px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.paste summary::-webkit-details-marker{display:none}
+.paste summary::after{content:"＋";color:var(--muted)}
+.paste[open] summary::after{content:"－"}
+.paste[open]{gap:12px}
+textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px;width:100%;min-height:110px;resize:vertical}
+.preview{display:flex;flex-direction:column;gap:4px}
+.preview .pv{display:flex;align-items:center;gap:10px;padding:6px 4px 6px 10px;border-radius:9px;background:var(--sunk)}
+.preview .pv b{flex:1;min-width:0;overflow-wrap:anywhere}
+.preview .pv button{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;color:var(--muted);font-size:18px;border-radius:8px}
+
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
 .panel h2{margin:0;font-size:17px;font-family:var(--display)}
 .fields{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;align-items:end}
@@ -123,7 +148,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 <!-- 設定が済んでいない -->
 <div class="wrap" id="scr-setup" hidden>
   <div class="center">
-    <h1>うちのストック帳</h1>
+    <h1>DEBUとCHIKAのストック帳</h1>
     <p class="msg">config.js に Supabase の URL とキーがまだ入っていません。README の手順 5 を見てください。</p>
   </div>
 </div>
@@ -133,7 +158,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
   <div class="center">
     <img class="logo" src="icons/icon-192.png" alt="">
     <div>
-      <h1>うちのストック帳</h1>
+      <h1>DEBUとCHIKAのストック帳</h1>
       <p class="sub">一度ログインすれば、次からはそのまま開けます。</p>
     </div>
     <div class="tabs" role="tablist">
@@ -169,7 +194,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 <div class="wrap" id="scr-app" hidden>
   <header>
     <div>
-      <h1>うちのストック帳</h1>
+      <h1>DEBUとCHIKAのストック帳</h1>
       <p class="sub">残り1つ以下になったら「買うもの」に出ます</p>
     </div>
     <button class="iconbtn" id="gearBtn" aria-label="設定">⚙<span class="badge" id="gearBadge" hidden></span></button>
@@ -202,6 +227,18 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
     <button role="tab" aria-selected="true" data-tab="stock">在庫</button>
     <button role="tab" aria-selected="false" data-tab="shop">お店で見る</button>
   </div>
+
+  <details class="panel paste" id="pastePanel" hidden>
+    <summary>LINEのメッセージから追加</summary>
+    <p class="hint">送られてきたメッセージを長押し →「コピー」して、下に貼り付けてください。1行に1品（例：牛乳 2本、豚バラ 300g）。</p>
+    <label for="pasteText" class="hint">メッセージ</label>
+    <textarea id="pasteText" placeholder="牛乳 2本&#10;豚バラ 300g&#10;玉ねぎ 3個"></textarea>
+    <div class="preview" id="preview"></div>
+    <div class="actions">
+      <button type="button" class="btn" id="pasteClear">消す</button>
+      <button type="button" class="btn primary" id="pasteAdd" disabled>登録</button>
+    </div>
+  </details>
 
   <div id="view"></div>
 
@@ -238,6 +275,7 @@ const pushSupported = "serviceWorker" in navigator && "PushManager" in window &&
 
 let sb = null, session = null;
 let items = [];
+let requests = [];
 let tab = new URLSearchParams(location.search).get("tab")==="shop" ? "shop" : "stock";
 let editing = null, confirmDel = false;
 let inflight = 0;
@@ -251,13 +289,25 @@ const label = it => it.qty<=0 ? "欠品" : it.qty<=it.alert_at ? `残り${it.qty
 const sorted = () => [...items].sort((a,b)=>(CATS.indexOf(a.cat)-CATS.indexOf(b.cat))||a.name.localeCompare(b.name,"ja"));
 const lowItems = () => sorted().filter(i=>level(i)!=="ok").sort((a,b)=>a.qty-b.qty);
 
+const pending = () => requests.filter(r=>!r.done);
+const amtText = r => r.amount ? (/^\d+(\.\d+)?$/.test(r.amount) ? "×"+r.amount : r.amount) : "";
+
 function renderAlert(){
-  const el=$("#alert"), low=lowItems();
-  if(!items.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してください。</p>`;return}
-  if(!low.length){el.className="alert calm";el.innerHTML=`<h2>今は買い足すものはありません</h2><p class="hint">全部、在庫が十分あります。</p>`;return}
+  const el=$("#alert"), low=lowItems(), reqs=pending();
+  if(!items.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してください。</p>`;return}
+  if(!low.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>今は買い足すものはありません</h2><p class="hint">全部、在庫が十分あります。</p>`;return}
   el.className="alert";
-  el.innerHTML=`<h2>買うもの <span class="n">${low.length}</span></h2>
-    <div class="chips">${low.map(i=>`<span class="chip ${level(i)}">${esc(i.name)} <b>${i.qty<=0?"欠品":"残り"+i.qty}</b></span>`).join("")}</div>`;
+  el.innerHTML=`<h2>買うもの <span class="n">${low.length+reqs.length}</span></h2>
+    <div class="chips">${reqs.map(r=>`<span class="chip asked">${esc(r.name)} <b>${esc(amtText(r)||"頼まれた")}</b></span>`).join("")}${low.map(i=>`<span class="chip ${level(i)}">${esc(i.name)} <b>${i.qty<=0?"欠品":"残り"+i.qty}</b></span>`).join("")}</div>`;
+}
+
+function reqHTML(r){
+  const it = r.done ? items.find(i=>i.id===r.added_item) : (r.count ? matchItem(r.name) : null);
+  const plus = it && (r.done ? r.added_qty : r.count) ? `<span class="plus">${r.done?"在庫に足しました":"買ったら在庫に"} +${r.done?r.added_qty:r.count}（${esc(it.name)}）</span>` : "";
+  return `<div class="req ${r.done?"done":""}" data-req="${esc(r.id)}" role="checkbox" aria-checked="${r.done}" tabindex="0">
+    <span class="check" aria-hidden="true">✓</span>
+    <div class="what"><b>${esc(r.name)}</b>${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}${plus}</div>
+  </div>`;
 }
 
 function rowHTML(i){
@@ -273,9 +323,10 @@ function rowHTML(i){
 }
 
 function renderView(){
-  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
-  const v=$("#view");
-  if(!items.length){v.innerHTML=`<div class="list"><div class="empty">まだ品目がありません</div></div>`;return}
+  document.querySelectorAll(".tabs button[data-tab]").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
+  const v=$("#view"), pp=$("#pastePanel");
+  pp.hidden = tab!=="shop";
+  if(tab==="stock" && !items.length){v.innerHTML=`<div class="list"><div class="empty">まだ品目がありません</div></div>`;return}
   if(tab==="stock"){
     const groups=CATS.map(c=>[c,sorted().filter(i=>i.cat===c)]).filter(g=>g[1].length);
     v.innerHTML=`<div class="stack">
@@ -283,8 +334,14 @@ function renderView(){
       ${groups.map(([c,list])=>`<div class="group"><h3>${esc(c)}</h3><div class="list">${list.map(rowHTML).join("")}</div></div>`).join("")}</div>`;
   }else{
     const buy=lowItems(), ok=sorted().filter(i=>level(i)==="ok");
+    const reqs=[...pending(), ...requests.filter(r=>r.done)];
+    const doneCount=requests.length-pending().length;
     v.innerHTML=`<div class="stack shop">
-      <section><h3>買うもの</h3>
+      <section><h3>頼まれたもの</h3>
+        <div class="list">${reqs.length?reqs.map(reqHTML).join(""):`<div class="empty">上の「LINEのメッセージから追加」で登録できます</div>`}</div>
+        ${doneCount?`<button type="button" class="linkbtn" id="clearDone">買ったもの ${doneCount} 件をリストから消す</button>`:""}
+      </section>
+      <section><h3>在庫が少ないもの</h3>
         <div class="list">${buy.length?buy.map(rowHTML).join(""):`<div class="empty">買い足すものはありません</div>`}</div>
         <p class="hint">買ったら ＋ を押すと、ここから消えます。</p></section>
       <section class="no"><h3>家にまだあるので買わない</h3>
@@ -297,9 +354,97 @@ function render(){renderAlert();renderView()}
 /* ================= データ ================= */
 async function load(){
   if(inflight) return;           // 自分の変更が送信中なら、終わってから読み直す
-  const {data,error}=await sb.from("items").select("id,name,cat,qty,alert_at");
-  if(error){toast("読み込めませんでした。電波を確認してください");return}
-  items=data; render();
+  const [a,b]=await Promise.all([
+    sb.from("items").select("id,name,cat,qty,alert_at"),
+    sb.from("requests").select("id,name,amount,count,done,added_item,added_qty,created_at").order("created_at"),
+  ]);
+  if(a.error||b.error){toast("読み込めませんでした。電波を確認してください");return}
+  items=a.data; requests=b.data; render();
+}
+
+/* ================= LINE のメッセージを読み取る ================= */
+const COUNT_UNITS="個|本|パック|袋|枚|缶|箱|玉|束|丁|株|房|尾|切れ|切|コ|こ|つ|p|P";
+const MEASURE_UNITS="kg|キロ|g|グラム|ml|mL|ミリ|cc|l|L|リットル";
+const RE_TAIL=new RegExp(`^(.*?)[\\s:×xX*]*(\\d+(?:\\.\\d+)?)\\s*(${MEASURE_UNITS}|${COUNT_UNITS})?$`);
+const RE_HEAD=new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*(${MEASURE_UNITS}|${COUNT_UNITS})?\\s+(.+)$`);
+const RE_COUNT=new RegExp(`^(${COUNT_UNITS})?$`);
+// 挨拶や依頼の文（品目ではない行）
+const CHATTY=/(お願い|よろしく|ください|下さい|ほしい|欲しい|買って|買いに|頼む|頼んだ|です|ます|ありがと|了解|帰り|今日|[!?？！])/;
+
+function parseLine(s){
+  let name=s, num="", unit="";
+  let m=s.match(RE_TAIL);
+  if(m && m[1].trim()){ name=m[1]; num=m[2]; unit=m[3]||""; }
+  else if((m=s.match(RE_HEAD))){ num=m[1]; unit=m[2]||""; name=m[3]; }
+  name=name.replace(/[\s:×xX*]+$/,"").trim().slice(0,40);
+  if(!name) return null;
+  const n=Number(num);
+  const count = num && RE_COUNT.test(unit) && Number.isInteger(n) && n>=1 && n<=99 ? n : null;
+  return {name, amount:(num+unit).slice(0,20), count};
+}
+function parseList(text){
+  const out=[];
+  for(let line of text.normalize("NFKC").split(/\r?\n/)){
+    if(line.includes("\t")) line=line.split("\t").pop();     // トーク履歴のコピー「12:34 DEBU 牛乳」
+    line=line.replace(/^\s*\d{1,2}:\d{2}\s+/,"");
+    if(/^\s*(\[LINE\]|保存日時|\d{4}[\/.年]\d{1,2}[\/.月]\d{1,2})/.test(line)) continue;   // 履歴の見出し・日付の行
+    for(let part of line.split(/[、,;]/)){
+      const s=part.replace(/^\s*([-*•●○◯□■▪☐☑✓✔>・]|\d+[.)])\s*/,"").trim();
+      if(!s || CHATTY.test(s)) continue;
+      const r=parseLine(s); if(r) out.push(r);
+    }
+  }
+  return out;
+}
+
+// 在庫の品目と名前が合うもの（完全一致か、前方一致で1つだけ）
+const norm=s=>s.normalize("NFKC").replace(/\s/g,"").toLowerCase();
+function matchItem(name){
+  const n=norm(name);
+  let hit=items.filter(i=>norm(i.name)===n); if(hit.length===1) return hit[0];
+  hit=items.filter(i=>{const m=norm(i.name);return m.startsWith(n)||n.startsWith(m)});
+  return hit.length===1?hit[0]:null;
+}
+
+let draft=[];
+function renderPreview(){
+  const pv=$("#preview");
+  pv.innerHTML = draft.length
+    ? `<p class="hint">この ${draft.length} 件を登録します（違うものは × で外せます）</p>`+draft.map((r,i)=>`<div class="pv"><b>${esc(r.name)}</b>${amtText(r)?`<span class="amt">${esc(amtText(r))}</span>`:""}<button type="button" data-drop="${i}" aria-label="${esc(r.name)}を外す">×</button></div>`).join("")
+    : ($("#pasteText").value.trim() ? `<p class="hint">品目を読み取れませんでした。1行に1品で書いてあるか確認してください。</p>` : "");
+  $("#pasteAdd").disabled=!draft.length;
+}
+$("#pasteText").addEventListener("input",()=>{draft=parseList($("#pasteText").value);renderPreview()});
+$("#pasteClear").onclick=()=>{$("#pasteText").value="";draft=[];renderPreview()};
+$("#preview").addEventListener("click",e=>{const b=e.target.closest("[data-drop]");if(b){draft.splice(Number(b.dataset.drop),1);renderPreview()}});
+$("#pasteAdd").onclick=async()=>{
+  const rows=draft.map(r=>({name:r.name,amount:r.amount,count:r.count}));
+  if(!rows.length) return;
+  $("#pasteAdd").disabled=true;
+  const data=await run(sb.from("requests").insert(rows).select("id,name,amount,count,done,added_item,added_qty,created_at"), `${rows.length} 件を頼まれたものに追加しました`);
+  if(data){requests.push(...data);$("#pasteText").value="";draft=[];renderPreview();$("#pastePanel").open=false;render()}
+  else $("#pasteAdd").disabled=false;
+};
+
+async function toggleReq(id){
+  const r=requests.find(x=>x.id===id); if(!r) return;
+  if(!r.done){
+    const it=r.count?matchItem(r.name):null;
+    r.done=true; r.added_item=it?it.id:null; r.added_qty=it?r.count:null;
+    if(it) it.qty=Math.min(999,it.qty+r.count);
+    render();
+    toast(it?`${r.name}：買いました。在庫に +${r.count}`:`${r.name}：買いました`);
+    await run(sb.from("requests").update({done:true,added_item:r.added_item,added_qty:r.added_qty}).eq("id",id));
+    if(it) await run(sb.rpc("adjust_qty",{item_id:it.id,delta:r.count}));
+  }else{
+    const it=items.find(i=>i.id===r.added_item), back=r.added_qty||0;
+    r.done=false; r.added_item=null; r.added_qty=null;
+    if(it&&back) it.qty=Math.max(0,it.qty-back);
+    render();
+    toast(`${r.name}：買う前に戻しました`);
+    await run(sb.from("requests").update({done:false,added_item:null,added_qty:null}).eq("id",id));
+    if(it&&back) await run(sb.rpc("adjust_qty",{item_id:it.id,delta:-back}));
+  }
 }
 let reloadTimer;
 function scheduleLoad(){clearTimeout(reloadTimer);reloadTimer=setTimeout(load,300)}
@@ -331,6 +476,12 @@ document.addEventListener("click",async e=>{
     if(after!=="ok"&&before==="ok") toast(`${it.name}：${label(it)}。買うものに入れました`);
     else if(after==="ok"&&before!=="ok") toast(`${it.name}：補充しました`);
     await run(sb.rpc("adjust_qty",{item_id:id,delta:d}));
+    return;
+  }
+  const rq=e.target.closest("[data-req]"); if(rq){toggleReq(rq.dataset.req);return}
+  if(e.target.closest("#clearDone")){
+    requests=pending(); render();
+    await run(sb.from("requests").delete().eq("done",true), "買ったものをリストから消しました");
     return;
   }
   const ed=e.target.closest("[data-edit]"); if(ed){startEdit(ed.dataset.edit);return}
@@ -488,7 +639,11 @@ async function enterApp(){
   show("app"); $("#s-email").textContent=session.user.email;
   if(started) return; started=true;
   render(); await load(); refreshPushUI();
-  sb.channel("items").on("postgres_changes",{event:"*",schema:"public",table:"items"},scheduleLoad).subscribe();
+  sb.channel("stock")
+    .on("postgres_changes",{event:"*",schema:"public",table:"items"},scheduleLoad)
+    .on("postgres_changes",{event:"*",schema:"public",table:"requests"},scheduleLoad)
+    .subscribe();
+  document.addEventListener("keydown",e=>{const r=e.target.closest&&e.target.closest("[data-req]");if(r&&(e.key===" "||e.key==="Enter")){e.preventDefault();toggleReq(r.dataset.req)}});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
 }
 

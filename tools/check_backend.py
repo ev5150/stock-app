@@ -27,13 +27,20 @@ with psycopg.connect(host=host, port=5432, dbname="postgres", user=f"postgres.{r
             cur.execute("select set_config('request.jwt.claims', %s, true)", (json.dumps({"email": email, "role": "authenticated"}),))
             cur.execute("select count(*) from public.items where id = %s", (item_id,))
             n = cur.fetchone()[0]
+            # 頼まれたもの：その人として登録して読めるか（最後に取り消す）
+            try:
+                cur.execute("insert into public.requests (name, amount, count) values ('動作確認', '1本', 1)")
+                cur.execute("select count(*) from public.requests where name = '動作確認'")
+                n += cur.fetchone()[0]
+            except psycopg.errors.InsufficientPrivilege:
+                pass
             cur.execute("rollback")
             return n
 
         cur.execute("select email from public.members order by email")
         members = [r[0] for r in cur.fetchall()]
         print("登録メンバー:", len(members), "人")
-        print("メンバーには見える:", visible_as(members[0]) == 1)
+        print("メンバーには見える:", visible_as(members[0]) == 2)
         print("部外者には見えない:", visible_as("stranger@example.com") == 0)
 
         # 通知の確認：2 → 1

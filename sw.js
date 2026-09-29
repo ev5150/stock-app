@@ -1,6 +1,6 @@
 // アプリの画面をオフラインでも開けるようにし、在庫の通知を表示する。
 // 画面のファイルを変えたら VERSION を上げると、スマホ側も新しい版に入れ替わる。
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `stock-${VERSION}`;
 const SHELL = [
   "./",
@@ -42,7 +42,7 @@ self.addEventListener("push", (e) => {
   let data = {};
   try { data = e.data ? e.data.json() : {}; } catch { data = { body: e.data && e.data.text() }; }
   e.waitUntil(
-    self.registration.showNotification(data.title || "うちのストック帳", {
+    self.registration.showNotification(data.title || "DEBUとCHIKAのストック帳", {
       body: data.body || "買うものが増えました",
       icon: "icons/icon-192.png",
       badge: "icons/icon-192.png",
