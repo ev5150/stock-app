@@ -68,7 +68,14 @@ h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spa
 @media (prefers-reduced-motion:reduce){.friend.hop .mascot{animation:none}}
 
 /* オープニング */
-.opening{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .5s ease;cursor:pointer}
+.opening{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .5s ease}
+.op-tap{all:unset;cursor:pointer;border-radius:20px;-webkit-tap-highlight-color:transparent}
+.op-tap:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
+.op-tap.wobble .op-mascot{animation:wobble .7s ease-in-out;transform-origin:50% 95%}
+@keyframes wobble{0%,100%{transform:rotate(0)}15%{transform:rotate(-12deg)}35%{transform:rotate(10deg)}55%{transform:rotate(-7deg)}75%{transform:rotate(4deg)}90%{transform:rotate(-2deg)}}
+.op-hint{margin:0;font-size:14px;font-weight:700;color:var(--accent);opacity:0}
+.op-hint.show{animation:fadeup .4s ease both,breathe 1.6s .4s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.35}}
 .opening.out{opacity:0;pointer-events:none}
 .op-band{position:absolute;left:0;right:0;height:18px;background:repeating-linear-gradient(90deg,var(--stripe) 0 14px,var(--surface) 14px 28px);animation:band 1.4s linear infinite}
 .op-band.top{top:calc(env(safe-area-inset-top,0px) + 24px)}
@@ -86,8 +93,8 @@ h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spa
 @keyframes pop{0%{transform:translateY(60px) scale(.3);opacity:0}100%{transform:none;opacity:1}}
 @keyframes fadeup{0%{transform:translateY(8px);opacity:0}100%{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){
-  .op-band,.op-mascot,.op-mascot.hop,.op-bubble,.op-title.show{animation:none}
-  .op-bubble,.op-title{opacity:1}
+  .op-band,.op-mascot,.op-mascot.hop,.op-bubble,.op-title.show,.op-hint.show,.op-tap.wobble .op-mascot{animation:none}
+  .op-bubble,.op-title,.op-hint{opacity:1}
   .opening{transition:none}
 }
 .alert.calm{border-color:var(--ok);background:var(--ok-bg)}
@@ -250,14 +257,17 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 </svg>
 
 <!-- オープニング（タップで飛ばせる） -->
-<div class="opening" id="opening" aria-hidden="true">
-  <div class="op-band top"></div>
+<div class="opening" id="opening">
+  <div class="op-band top" aria-hidden="true"></div>
   <div class="op-stage">
-    <div class="bubble op-bubble">
+    <div class="bubble op-bubble" aria-hidden="true">
       <span class="op-ghost">いっしょに<br>おうちの在庫を<br>見ていこうね</span>
       <span id="opText"></span>
     </div>
-    <svg class="mascot op-mascot" id="opMascot" viewBox="0 0 120 140"><use id="opFace" href="#m-normal"/></svg>
+    <button type="button" class="op-tap" id="opTap" aria-label="うーをタップして中に入る">
+      <svg class="mascot op-mascot" id="opMascot" viewBox="0 0 120 140" aria-hidden="true"><use id="opFace" href="#m-normal"/></svg>
+    </button>
+    <p class="op-hint" id="opHint" aria-hidden="true">うーをタップしてね</p>
     <p class="op-title" id="opTitle">DEBUとCHIKAのストック帳</p>
   </div>
   <div class="op-band bottom"></div>
@@ -826,16 +836,23 @@ $("#newPassForm").addEventListener("submit",async e=>{
   const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
   let closed=false;
   function close(){
-    if(closed) return; closed=true;
-    timers.forEach(clearTimeout);
     el.classList.add("out");
     setTimeout(()=>el.remove(),600);
   }
-  el.addEventListener("click",close);
+  // うーをタップ → ゆらゆら揺れてから中に入る
+  $("#opTap").addEventListener("click",()=>{
+    if(closed) return; closed=true;
+    timers.forEach(clearTimeout);
+    txt.innerHTML=lines.join("<br>");
+    $("#opFace").setAttribute("href","#m-happy");
+    $("#opMascot").classList.remove("hop");
+    $("#opTap").classList.add("wobble");
+    setTimeout(close, still ? 0 : 700);
+  });
   if(still){
     txt.innerHTML=lines.join("<br>");
     $("#opFace").setAttribute("href","#m-happy");
-    later(close,1500);
+    $("#opHint").classList.add("show");
     return;
   }
   // 1文字ずつ表示
@@ -846,7 +863,7 @@ $("#newPassForm").addEventListener("submit",async e=>{
   later(tick,typeStart);
   // 言い終わったら、にっこりしてぴょん
   later(()=>{ $("#opFace").setAttribute("href","#m-happy"); const m=$("#opMascot"); m.classList.remove("hop"); void m.getBoundingClientRect(); m.classList.add("hop"); $("#opTitle").classList.add("show"); }, typeEnd+150);
-  later(close, typeEnd+1500);
+  later(()=>$("#opHint").classList.add("show"), typeEnd+700);
 })();
 
 /* ================= 起動 ================= */
