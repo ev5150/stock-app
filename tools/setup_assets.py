@@ -1,4 +1,4 @@
-"""アプリアイコンを作るスクリプト。
+"""アプリアイコンを作るスクリプト（ぬいぐるみをもとにしたマスコットの顔）。
 
 使い方:  python tools/setup_assets.py   （Pillow が必要: pip install pillow）
 icons/ に PNG アイコンを書き出す。
@@ -9,30 +9,62 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
 
+BLUE = (62, 104, 176)
+STRIPE = (111, 147, 207)
+WHITE = (251, 250, 246)
+FUR = (207, 201, 190)
+FUR_EDGE = (189, 182, 170)
+KNIT = (173, 166, 151)
+KNIT_DARK = (148, 141, 126)
+NOSE = (110, 65, 40)
+INK = (43, 39, 36)
+CHEEK = (236, 186, 180)
+LEAF = (156, 196, 138)
+
 
 def draw_icon(size: int, maskable: bool) -> Image.Image:
-    bg = (47, 107, 79)       # 深い緑
-    paper = (243, 245, 241)
-    warn = (240, 183, 90)
-    img = Image.new("RGB", (size, size), bg)
+    ss = 4                                   # 4倍で描いて縮小（なめらかにする）
+    S = size * ss
+    img = Image.new("RGB", (S, S), BLUE)
     d = ImageDraw.Draw(img)
-    s = size / 512
-    pad = 0.18 if maskable else 0.12
-    # 棚に並んだ3つの瓶。右端だけ残りわずか。
-    x0, x1 = size * pad, size * (1 - pad)
-    shelf_y = size * 0.72
-    w = (x1 - x0) / 3
-    for i, level in enumerate([0.95, 0.95, 0.25]):
-        left = x0 + i * w + 10 * s
-        right = x0 + (i + 1) * w - 10 * s
-        top = size * 0.30
-        d.rounded_rectangle([left, top, right, shelf_y], radius=18 * s, outline=paper, width=int(10 * s))
-        fill_top = shelf_y - (shelf_y - top - 14 * s) * level
-        color = warn if level < 0.5 else paper
-        d.rounded_rectangle([left + 14 * s, fill_top, right - 14 * s, shelf_y - 14 * s], radius=8 * s, fill=color)
-        d.rectangle([left + 16 * s, top - 26 * s, right - 16 * s, top - 4 * s], fill=paper)
-    d.rounded_rectangle([x0 - 6 * s, shelf_y + 8 * s, x1 + 6 * s, shelf_y + 26 * s], radius=6 * s, fill=paper)
-    return img
+    k = S / 512
+    scale = 0.78 if maskable else 1.0        # maskable は周りが切られるので小さめに
+    cx, cy = S / 2, S / 2 + 20 * k
+
+    def P(x, y):
+        return (cx + (x - 256) * k * scale, cy + (y - 256) * k * scale)
+
+    def box(x0, y0, x1, y1):
+        return [*P(x0, y0), *P(x1, y1)]
+
+    # シャツ（ボーダー）
+    shirt = box(96, 380, 416, 640)
+    layer = Image.new("RGB", (S, S), WHITE)
+    ld = ImageDraw.Draw(layer)
+    for y in range(392, 640, 36):
+        ld.rectangle(box(0, y, 512, y + 16), fill=STRIPE)
+    mask = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(mask).rounded_rectangle(shirt, radius=110 * k * scale, fill=255)
+    img.paste(layer, (0, 0), mask)
+
+    # 顔
+    d.ellipse(box(106, 96, 406, 396), fill=FUR, outline=FUR_EDGE, width=int(6 * k * scale))
+    # ニット帽
+    d.chord(box(100, 60, 412, 330), start=180, end=360, fill=KNIT)
+    d.rectangle(box(100, 190, 412, 196), fill=KNIT)
+    d.arc(box(100, 150, 412, 250), start=190, end=350, fill=KNIT_DARK, width=int(22 * k * scale))
+    d.ellipse(box(300, 100, 340, 140), fill=LEAF)
+    # 目
+    for x in (190, 322):
+        d.ellipse(box(x - 13, 232, x + 13, 258), fill=INK)
+    # ほっぺ
+    for x in (160, 352):
+        d.ellipse(box(x - 30, 286, x + 30, 310), fill=CHEEK)
+    # 鼻
+    d.ellipse(box(212, 262, 300, 338), fill=NOSE)
+    d.ellipse(box(226, 274, 252, 290), fill=(160, 120, 100))
+
+    return img.resize((size, size), Image.LANCZOS)
 
 
 if __name__ == "__main__":

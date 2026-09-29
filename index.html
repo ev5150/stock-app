@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DEBUとCHIKAのストック帳</title>
-<meta name="theme-color" content="#2F6B4F">
+<meta name="theme-color" content="#3E68B0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ストック帳">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -17,20 +17,21 @@
 <style>
 :root{
   color-scheme:light;
-  --bg:#F3F5F1; --surface:#FFFFFF; --sunk:#E8ECE6; --ink:#1D2822; --muted:#5E6B63; --line:#D5DCD4;
-  --accent:#2F6B4F; --accent-ink:#FFFFFF;
-  --ok:#2F6B4F; --ok-bg:#E3EFE7;
-  --warn:#9A5B00; --warn-bg:#FBEBCB;
-  --crit:#B3261E; --crit-bg:#FBE1DD;
+  /* ぬいぐるみの色：ボーダーの青、袖の赤、毛の灰色、鼻の茶色、刺しゅうの緑 */
+  --bg:#FAF7F1; --surface:#FFFFFF; --sunk:#EFEBE3; --ink:#2B2724; --muted:#6F675F; --line:#E2DCD1;
+  --accent:#3E68B0; --accent-ink:#FFFFFF; --stripe:#6F93CF;
+  --ok:#4C8A3C; --ok-bg:#E6F1DE;
+  --warn:#A25A00; --warn-bg:#FCEBCB;
+  --crit:#C23F35; --crit-bg:#FBE3DF;
   --display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
   --body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root{
     color-scheme:dark;
-    --bg:#121815; --surface:#1B231F; --sunk:#232D28; --ink:#E4ECE6; --muted:#9AA89F; --line:#2E3A34;
-    --accent:#6FC29A; --accent-ink:#0E1712;
-    --ok:#7BCBA2; --ok-bg:#1E3329; --warn:#F0B75A; --warn-bg:#3A2C12; --crit:#FF8A7E; --crit-bg:#41201C;
+    --bg:#16181D; --surface:#1F2229; --sunk:#282C35; --ink:#ECE8E2; --muted:#A8A198; --line:#343944;
+    --accent:#8FB1EC; --accent-ink:#11151C; --stripe:#4F6FA8;
+    --ok:#9ACF86; --ok-bg:#223020; --warn:#F2B862; --warn-bg:#3A2C12; --crit:#FF8E82; --crit-bg:#43201D;
   }
 }
 *{box-sizing:border-box}
@@ -40,6 +41,17 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 [hidden]{display:none!important}
 .wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:16px 72px;display:flex;flex-direction:column;gap:18px}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+header .brand{display:flex;align-items:center;gap:10px;min-width:0}
+/* ぬいぐるみのシャツのボーダー */
+.stripes{height:10px;border-radius:999px;background:repeating-linear-gradient(90deg,var(--stripe) 0 10px,var(--surface) 10px 20px);border:1px solid var(--line)}
+.mascot{display:block;flex:none}
+.mascot.xs{width:48px;height:56px}
+.mascot.sm{width:64px;height:75px}
+.mascot.lg{width:132px;height:154px}
+.hello{display:flex;align-items:flex-end;gap:12px}
+.bubble{position:relative;white-space:nowrap;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:14px}
+.bubble::before{content:"";position:absolute;left:-7px;bottom:16px;width:12px;height:12px;background:var(--surface);border-left:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+.empty .mascot{margin:0 auto 6px}
 h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spacing:.02em;text-wrap:balance}
 .sub{color:var(--muted);font-size:13px;margin:2px 0 0}
 .iconbtn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;cursor:pointer;display:grid;place-items:center}
@@ -48,7 +60,8 @@ h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spa
 .banner{border-radius:12px;padding:12px 14px;background:var(--warn-bg);color:var(--ink);font-size:14px;display:flex;gap:10px;align-items:flex-start}
 .banner b{color:var(--warn)}
 
-.alert{border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;border:1.5px solid var(--crit);background:var(--crit-bg)}
+.alert{position:relative;border-radius:14px;padding:16px 84px 16px 16px;min-height:104px;display:flex;flex-direction:column;gap:10px;border:1.5px solid var(--crit);background:var(--crit-bg)}
+.alert > .mascot{position:absolute;right:10px;bottom:8px}
 .alert.calm{border-color:var(--ok);background:var(--ok-bg)}
 .alert h2{margin:0;font-family:var(--display);font-size:18px;display:flex;align-items:center;gap:8px}
 .alert h2 .n{font-variant-numeric:tabular-nums;background:var(--crit);color:var(--surface);border-radius:999px;padding:0 10px;font-size:15px}
@@ -150,6 +163,57 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 </head>
 <body>
 
+<!-- マスコット（ぬいぐるみをもとにしたオリジナルのイラスト）。 <svg><use href="#m-happy"/></svg> のように使う -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="p-shirt" width="10" height="10" patternUnits="userSpaceOnUse">
+      <rect width="10" height="10" fill="#FBFAF6"/><rect width="10" height="4.6" fill="#6F93CF"/>
+    </pattern>
+    <pattern id="p-sleeve" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(90)">
+      <rect width="6" height="6" fill="#FBFAF6"/><rect width="6" height="2.6" fill="#D2574C"/>
+    </pattern>
+    <pattern id="p-knit" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#ADA697"/><path d="M0 3.5l1.5-1.5 1.5 1.5 1.5-1.5 1.5 1.5" stroke="#948D7E" stroke-width="1" fill="none"/>
+    </pattern>
+    <symbol id="m-base" viewBox="0 0 120 140">
+      <ellipse cx="22" cy="94" rx="12" ry="15" fill="url(#p-sleeve)" stroke="#E0D8CC" transform="rotate(-25 22 94)"/>
+      <ellipse cx="98" cy="94" rx="12" ry="15" fill="url(#p-sleeve)" stroke="#E0D8CC" transform="rotate(25 98 94)"/>
+      <path d="M26 86Q26 74 40 72L80 72Q94 74 94 86L96 120Q96 136 78 136L42 136Q24 136 24 120Z" fill="url(#p-shirt)" stroke="#E0D8CC"/>
+      <g transform="translate(62 104)">
+        <path d="M0 14Q-1 2 7 0Q15 2 14 14Q10 12 7 14Q4 12 0 14Z" fill="#8FC06E" stroke="#5E8F45" stroke-width=".8"/>
+        <circle cx="4.5" cy="6" r="1.1" fill="#2B2724"/><circle cx="9.5" cy="6" r="1.1" fill="#2B2724"/>
+        <path d="M-11 14Q-12 6-6 5Q0 6-1 14Q-4 12-6 14Q-8 12-11 14Z" fill="#B7DD95" stroke="#6E9F55" stroke-width=".8"/>
+        <circle cx="-8" cy="9" r=".9" fill="#2B2724"/><circle cx="-4" cy="9" r=".9" fill="#2B2724"/>
+      </g>
+      <ellipse cx="60" cy="76" rx="26" ry="6" fill="#D8D2C6"/>
+      <circle cx="60" cy="50" r="36" fill="#CFC9BE"/>
+      <circle cx="60" cy="50" r="36" fill="none" stroke="#BDB6AA" stroke-width="3" stroke-dasharray="1 4" stroke-linecap="round"/>
+      <path d="M24 44Q26 10 60 10Q94 10 96 44Q60 32 24 44Z" fill="url(#p-knit)"/>
+      <path d="M24 44Q60 32 96 44" stroke="#948D7E" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M38 24q6-6 12 0t12 0" stroke="#5F87C9" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <circle cx="80" cy="22" r="4" fill="#9CC48A"/>
+      <ellipse cx="40" cy="64" rx="6" ry="3.5" fill="#E9A0A0" opacity=".45"/>
+      <ellipse cx="80" cy="64" rx="6" ry="3.5" fill="#E9A0A0" opacity=".45"/>
+      <ellipse cx="60" cy="62" rx="10" ry="9" fill="#6E4128"/>
+      <ellipse cx="56.5" cy="58.5" rx="3" ry="2" fill="#FFFFFF" opacity=".55"/>
+    </symbol>
+    <symbol id="m-normal" viewBox="0 0 120 140">
+      <use href="#m-base"/>
+      <circle cx="45" cy="52" r="2.8" fill="#2B2724"/><circle cx="75" cy="52" r="2.8" fill="#2B2724"/>
+    </symbol>
+    <symbol id="m-happy" viewBox="0 0 120 140">
+      <use href="#m-base"/>
+      <path d="M40 54q5-6 10 0M70 54q5-6 10 0" stroke="#2B2724" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="m-worried" viewBox="0 0 120 140">
+      <use href="#m-base"/>
+      <circle cx="45" cy="54" r="2.8" fill="#2B2724"/><circle cx="75" cy="54" r="2.8" fill="#2B2724"/>
+      <path d="M39 47l10 2.5M81 47l-10 2.5" stroke="#2B2724" stroke-width="2" stroke-linecap="round"/>
+      <path d="M100 30q-6 9 0 13q6-4 0-13Z" fill="#8DB9EA"/>
+    </symbol>
+  </defs>
+</svg>
+
 <!-- 設定が済んでいない -->
 <div class="wrap" id="scr-setup" hidden>
   <div class="center">
@@ -161,7 +225,10 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 <!-- ログイン -->
 <div class="wrap" id="scr-login" hidden>
   <div class="center">
-    <img class="logo" src="icons/icon-192.png" alt="">
+    <div class="hello">
+      <svg class="mascot lg" viewBox="0 0 120 140" aria-hidden="true"><use href="#m-happy"/></svg>
+      <div class="bubble">いっしょに<br>おうちの在庫を<br>見ていこうね</div>
+    </div>
     <div>
       <h1>DEBUとCHIKAのストック帳</h1>
       <p class="sub">一度ログインすれば、次からはそのまま開けます。</p>
@@ -198,12 +265,16 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 <!-- 本体 -->
 <div class="wrap" id="scr-app" hidden>
   <header>
-    <div>
-      <h1>DEBUとCHIKAのストック帳</h1>
-      <p class="sub">残り1つ以下になったら「買うもの」に出ます</p>
+    <div class="brand">
+      <svg class="mascot xs" viewBox="0 0 120 140" aria-hidden="true"><use href="#m-normal"/></svg>
+      <div>
+        <h1>DEBUとCHIKAのストック帳</h1>
+        <p class="sub">残り1つ以下になったら「買うもの」に出ます</p>
+      </div>
     </div>
     <button class="iconbtn" id="gearBtn" aria-label="設定">⚙<span class="badge" id="gearBadge" hidden></span></button>
   </header>
+  <div class="stripes" aria-hidden="true"></div>
 
   <div class="banner" id="installBanner" hidden>
     <div><b>通知を受け取るには</b><br>下の共有ボタン（□に↑）→「ホーム画面に追加」を押して、ホーム画面のアイコンから開いてください。</div>
@@ -301,13 +372,16 @@ const atHome = r => { const it=matchItem(r.name); return it && level(it)==="ok" 
 const toBuy = () => pending().filter(r=>!atHome(r));
 const amtText = r => r.amount ? (/^\d+(\.\d+)?$/.test(r.amount) ? "×"+r.amount : r.amount) : "";
 
+const mascot = (mood, size) => `<svg class="mascot ${size}" viewBox="0 0 120 140" aria-hidden="true"><use href="#m-${mood}"/></svg>`;
+
 function renderAlert(){
   const el=$("#alert"), low=lowItems(), reqs=toBuy();
-  if(!items.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してください。</p>`;return}
-  if(!low.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>今は買い足すものはありません</h2><p class="hint">全部、在庫が十分あります。</p>`;return}
+  if(!items.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>品目を登録しましょう</h2><p class="hint">下のフォームから、家に置いておきたいものを追加してね。</p>${mascot("normal","sm")}`;return}
+  if(!low.length&&!reqs.length){el.className="alert calm";el.innerHTML=`<h2>今日は買わなくて大丈夫</h2><p class="hint">全部、家に十分あるよ。</p>${mascot("happy","sm")}`;return}
   el.className="alert";
   el.innerHTML=`<h2>買うもの <span class="n">${low.length+reqs.length}</span></h2>
-    <div class="chips">${reqs.map(r=>`<span class="chip asked">${esc(r.name)} <b>${esc(amtText(r)||"頼まれた")}</b></span>`).join("")}${low.map(i=>`<span class="chip ${level(i)}">${esc(i.name)} <b>${i.qty<=0?"欠品":"残り"+i.qty}</b></span>`).join("")}</div>`;
+    <div class="chips">${reqs.map(r=>`<span class="chip asked">${esc(r.name)} <b>${esc(amtText(r)||"頼まれた")}</b></span>`).join("")}${low.map(i=>`<span class="chip ${level(i)}">${esc(i.name)} <b>${i.qty<=0?"欠品":"残り"+i.qty}</b></span>`).join("")}</div>
+    ${mascot("worried","sm")}`;
 }
 
 function reqHTML(r){
@@ -339,7 +413,7 @@ function renderView(){
   document.querySelectorAll(".tabs button[data-tab]").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
   const v=$("#view"), pp=$("#pastePanel");
   pp.hidden = tab!=="shop";
-  if(tab==="stock" && !items.length){v.innerHTML=`<div class="list"><div class="empty">まだ品目がありません</div></div>`;return}
+  if(tab==="stock" && !items.length){v.innerHTML=`<div class="list"><div class="empty">${mascot("normal","sm")}まだ品目がありません</div></div>`;return}
   if(tab==="stock"){
     const groups=CATS.map(c=>[c,sorted().filter(i=>i.cat===c)]).filter(g=>g[1].length);
     v.innerHTML=`<div class="stack">
@@ -358,7 +432,7 @@ function renderView(){
         </div>`:""}
       </section>
       <section><h3>在庫が少ないもの</h3>
-        <div class="list">${buy.length?buy.map(rowHTML).join(""):`<div class="empty">買い足すものはありません</div>`}</div>
+        <div class="list">${buy.length?buy.map(rowHTML).join(""):`<div class="empty">${mascot("happy","sm")}買い足すものはありません</div>`}</div>
         <p class="hint">買ったら ＋ を押すと、ここから消えます。</p></section>
       <section class="no"><h3>家にまだあるので買わない</h3>
         <div class="nobuy">${ok.map(i=>`<span>${esc(i.name)} ×${i.qty}</span>`).join("")||"<span>なし</span>"}</div></section>
