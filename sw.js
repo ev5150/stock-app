@@ -1,6 +1,4 @@
-// アプリの画面をオフラインでも開けるようにし、在庫の通知を表示する。
-// 画面のファイルを変えたら VERSION を上げると、スマホ側も新しい版に入れ替わる。
-const VERSION = "v5";
+﻿// 繧｢繝励Μ縺ｮ逕ｻ髱｢繧偵が繝輔Λ繧､繝ｳ縺ｧ繧る幕縺代ｋ繧医≧縺ｫ縺励∝惠蠎ｫ縺ｮ騾夂衍繧定｡ｨ遉ｺ縺吶ｋ縲・// 逕ｻ髱｢縺ｮ繝輔ぃ繧､繝ｫ繧貞､峨∴縺溘ｉ VERSION 繧剃ｸ翫￡繧九→縲√せ繝槭・蛛ｴ繧よ眠縺励＞迚医↓蜈･繧梧崛繧上ｋ縲・const VERSION = "v6";
 const CACHE = `stock-${VERSION}`;
 const SHELL = [
   "./",
@@ -23,8 +21,7 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-// 自分のサイトのファイルは「まずネット、だめならキャッシュ」。在庫データ(Supabase)は触らない。
-self.addEventListener("fetch", (e) => {
+// 閾ｪ蛻・・繧ｵ繧､繝医・繝輔ぃ繧､繝ｫ縺ｯ縲後∪縺壹ロ繝・ヨ縲√□繧√↑繧峨く繝｣繝・す繝･縲阪ょ惠蠎ｫ繝・・繧ｿ(Supabase)縺ｯ隗ｦ繧峨↑縺・・self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== self.location.origin) return;
   e.respondWith(
@@ -42,8 +39,8 @@ self.addEventListener("push", (e) => {
   let data = {};
   try { data = e.data ? e.data.json() : {}; } catch { data = { body: e.data && e.data.text() }; }
   e.waitUntil(
-    self.registration.showNotification(data.title || "DEBUとCHIKAのストック帳", {
-      body: data.body || "買うものが増えました",
+    self.registration.showNotification(data.title || "DEBU縺ｨCHIKA縺ｮ繧ｹ繝医ャ繧ｯ蟶ｳ", {
+      body: data.body || "雋ｷ縺・ｂ縺ｮ縺悟｢励∴縺ｾ縺励◆",
       icon: "icons/icon-192.png",
       badge: "icons/icon-192.png",
       tag: data.tag,

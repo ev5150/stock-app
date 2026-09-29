@@ -20,6 +20,7 @@ NOSE = (110, 65, 40)
 INK = (43, 39, 36)
 CHEEK = (236, 186, 180)
 LEAF = (156, 196, 138)
+STITCH = (95, 135, 201)
 
 
 def draw_icon(size: int, maskable: bool) -> Image.Image:
@@ -53,7 +54,14 @@ def draw_icon(size: int, maskable: bool) -> Image.Image:
     d.chord(box(100, 60, 412, 330), start=180, end=360, fill=KNIT)
     d.rectangle(box(100, 190, 412, 196), fill=KNIT)
     d.arc(box(100, 150, 412, 250), start=190, end=350, fill=KNIT_DARK, width=int(22 * k * scale))
-    d.ellipse(box(300, 100, 340, 140), fill=LEAF)
+    d.ellipse(box(330, 96, 366, 132), fill=LEAF)
+    # 帽子の刺しゅう「う〜」
+    w = int(12 * k * scale)
+    d.line([P(196, 104), P(226, 104)], fill=STITCH, width=w)
+    d.line([P(180, 134), P(204, 124), P(226, 124), P(240, 136), P(238, 154), P(222, 170), P(202, 178)], fill=STITCH, width=w, joint="curve")
+    import math
+    wave = [P(254 + t, 142 - 7 * math.sin(t / 80 * 2 * math.pi * 1.5)) for t in range(0, 81, 2)]
+    d.line(wave, fill=STITCH, width=w, joint="curve")
     # 目
     for x in (190, 322):
         d.ellipse(box(x - 13, 232, x + 13, 258), fill=INK)
